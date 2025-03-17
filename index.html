@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Cute Guardians</title>
-    <meta charset="UTF-8"> <!-- 解決中文亂碼 -->
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
@@ -12,18 +12,24 @@
             align-items: center;
             min-height: 100vh;
             background: #000;
+            overflow: hidden; /* 防止滾動條出現 */
         }
         #gameContainer {
             width: 100%;
-            max-width: 1920px; /* 最大遊戲容器寬度 */
+            max-width: 1920px;
+            max-height: 100vh; /* 限制最大高度為視口高度 */
             aspect-ratio: 16 / 9;
             position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #gameCanvas {
             width: 100%;
             height: 100%;
             display: block;
             touch-action: none;
+            object-fit: contain; /* 保持比例並適應容器 */
         }
         #startScreen {
             position: absolute;
@@ -31,7 +37,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: transparent; /* 開始畫面無黑色遮罩 */
+            background: transparent;
             color: white;
             display: flex;
             flex-direction: column;
@@ -40,8 +46,8 @@
             font-family: Arial, sans-serif;
         }
         #startScreen img {
-            width: 70%; /* 標題圖片寬度，可調整 */
-            max-width: 800px; /* 最大寬度限制 */
+            width: 70%;
+            max-width: 800px;
         }
         #endScreen, #loadingScreen {
             position: absolute;
@@ -49,7 +55,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7); /* 結束畫面和載入畫面保留黑色遮罩 */
+            background: rgba(0,0,0,0.7);
             color: white;
             display: flex;
             flex-direction: column;
@@ -60,33 +66,33 @@
         #startScreen, #endScreen { display: none; }
         #scoreDisplay {
             position: absolute;
-            top: 10px; /* 分數顯示距離頂部的距離 */
-            left: 10px; /* 分數顯示距離左邊的距離 */
-            color: white; /* 分數文字顏色 */
+            top: 10px;
+            left: 10px;
+            color: white;
             font-family: Arial, sans-serif;
-            font-size: 24px; /* 分數文字大小 */
+            font-size: 24px;
         }
         #soundControls {
             position: absolute;
-            top: 10px; /* 音效控制按鈕距離頂部的距離 */
-            right: 10px; /* 音效控制按鈕距離右邊的距離 */
+            top: 10px;
+            right: 10px;
             display: flex;
-            gap: 10px; /* 按鈕間距 */
+            gap: 10px;
         }
         #bgmButton, #sfxButton {
-            width: 80px; /* 按鈕寬度 */
-            height: 40px; /* 按鈕高度 */
-            font-size: 16px; /* 按鈕文字大小 */
-            background: rgba(255, 255, 255, 0.2); /* 按鈕背景顏色和透明度 */
+            width: 80px;
+            height: 40px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            border-radius: 5px; /* 按鈕圓角大小 */
-            color: white; /* 按鈕文字顏色 */
+            border-radius: 5px;
+            color: white;
             cursor: pointer;
-            transition: background 0.3s; /* 背景顏色過渡時間 */
+            transition: background 0.3s;
             touch-action: manipulation;
         }
         #bgmButton:hover, #sfxButton:hover {
-            background: rgba(255, 255, 255, 0.4); /* 按鈕懸停時背景顏色 */
+            background: rgba(255, 255, 255, 0.4);
         }
     </style>
 </head>
@@ -119,62 +125,56 @@
         const bgmButton = document.getElementById('bgmButton');
         const sfxButton = document.getElementById('sfxButton');
 
-        // Adjustable parameters with Chinese comments
-        const GAME_WIDTH = 1920; // 遊戲寬度
-        const GAME_HEIGHT = 1080; // 遊戲高度
-        const ATTACK_DURATION_SHORT = 0.2; // 短攻擊持續時間 (秒)
-        const ATTACK_DURATION_LONG = 0.5; // 長攻擊持續時間 (秒)
-        const SPECIAL_MODE_PREP_DURATION = 2; // 特殊模式準備時間 (秒)
-        const END_SCREEN_DELAY_DURATION = 2; // 結束畫面延遲時間 (秒)
-        const TRANSITION_DURATION = 1; // 背景轉場時間 (秒)
-        const FRAME_DURATION = 0.5; // 動畫每幀時間 (秒)
-        const DEAD_ANIMATION_DURATION = 0.5; // 敵人死亡動畫時間 (秒)
-        const DEAD_SPEED_X = 100; // 敵人死亡時X軸速度
-        const DEAD_SPEED_Y = -200; // 敵人死亡時Y軸速度
-        const END_FADE_DURATION = 1; // 結束畫面淡入時間 (秒)
-        const MUSIC_FADE_DURATION = 1; // 音樂淡入淡出時間 (秒)
-        const TITLE_FADE_DURATION = 2; // 標題圖片淡出時間 (秒)
-        const SPEED_START = 2; // 敵人起始速度
-        const SPEED_50 = 8; // 50分時敵人速度
-        const SPEED_MAX = 17; // 敵人最大速度
-        const SPEED_CAP_SCORE = 200; // 速度達到上限的分數
-        const SPAWN_RATE_START = 800; // 敵人初始生成間隔 (毫秒)
-        const SPAWN_RATE_25 = 600; // 25分時生成間隔 (毫秒)
-        const SPAWN_RATE_50 = 500; // 50分時生成間隔 (毫秒)
-        const SPAWN_RATE_75 = 400; // 75分時生成間隔 (毫秒)
-        const SPAWN_RATE_100 = 250; // 100分時生成間隔 (毫秒)
-        const SPAWN_RATE_200 = 150; // 200分時生成間隔 (毫秒)
-        const SPAWN_RATE_MIN = 150; // 最小生成間隔 (毫秒)
-        const SPAWN_CAP_SCORE = 100; // 生成間隔達到上限的分數
-        const MIN_SIDE_INTERVAL = 200; // 同側連續生成最小間隔 (毫秒)
-        const BG_SWITCH_SCORE_INTERVAL = 20; // 背景切換的分數間隔 (可調整)
+        const GAME_WIDTH = 1920;
+        const GAME_HEIGHT = 1080;
+        const ATTACK_DURATION_SHORT = 0.2;
+        const ATTACK_DURATION_LONG = 0.5;
+        const SPECIAL_MODE_PREP_DURATION = 2;
+        const END_SCREEN_DELAY_DURATION = 2;
+        const TRANSITION_DURATION = 1;
+        const FRAME_DURATION = 0.5;
+        const DEAD_ANIMATION_DURATION = 0.5;
+        const DEAD_SPEED_X = 100;
+        const DEAD_SPEED_Y = -200;
+        const END_FADE_DURATION = 1;
+        const MUSIC_FADE_DURATION = 1;
+        const TITLE_FADE_DURATION = 2;
+        const SPEED_START = 2;
+        const SPEED_50 = 8;
+        const SPEED_MAX = 17;
+        const SPEED_CAP_SCORE = 200;
+        const SPAWN_RATE_START = 800;
+        const SPAWN_RATE_25 = 600;
+        const SPAWN_RATE_50 = 500;
+        const SPAWN_RATE_75 = 400;
+        const SPAWN_RATE_100 = 250;
+        const SPAWN_RATE_200 = 150;
+        const SPAWN_RATE_MIN = 150;
+        const SPAWN_CAP_SCORE = 100;
+        const MIN_SIDE_INTERVAL = 200;
+        const BG_SWITCH_SCORE_INTERVAL = 20;
 
-        // Player adjustments
-        const PLAYER_X = GAME_WIDTH / 2; // 玩家X軸位置
-        const PLAYER_Y = GAME_HEIGHT * 0.75; // 玩家Y軸位置
-        const PLAYER_WIDTH = 200; // 玩家寬度
-        const PLAYER_HEIGHT = 200; // 玩家高度
-        const PLAYER_ATTACK_RANGE = 300; // 玩家攻擊範圍
+        const PLAYER_X = GAME_WIDTH / 2;
+        const PLAYER_Y = GAME_HEIGHT * 0.75;
+        const PLAYER_WIDTH = 200;
+        const PLAYER_HEIGHT = 200;
+        const PLAYER_ATTACK_RANGE = 300;
 
-        // Enemy adjustments
-        const ENEMY_WIDTH = 140; // 敵人寬度
-        const ENEMY_HEIGHT = 140; // 敵人高度
-        const ENEMY_Y = GAME_HEIGHT * 0.76 - ENEMY_HEIGHT / 2; // 敵人Y軸位置
-        const ENEMY_SPEED_VARIATION = 0.4; // 敵人速度隨機變化範圍 (0.8 ~ 1.2)
+        const ENEMY_WIDTH = 140;
+        const ENEMY_HEIGHT = 140;
+        const ENEMY_Y = GAME_HEIGHT * 0.76 - ENEMY_HEIGHT / 2;
+        const ENEMY_SPEED_VARIATION = 0.4;
 
-        // K image adjustments
-        const K_WIDTH_SCALE = 1.2; // K圖片寬度縮放比例
-        const K_HEIGHT_SCALE = 1.2; // K圖片高度縮放比例
-        const K_Y_POSITION = GAME_HEIGHT * 0.63; // K圖片Y軸位置
+        const K_WIDTH_SCALE = 1.2;
+        const K_HEIGHT_SCALE = 1.2;
+        const K_Y_POSITION = GAME_HEIGHT * 0.63;
 
-        // Dead enemy adjustments
-        const DEAD_ENEMY_Y_POSITION = ENEMY_Y; // 死亡敵人初始Y軸位置
+        const DEAD_ENEMY_Y_POSITION = ENEMY_Y;
 
-        // End image adjustments
-        const END_IMAGE_WIDTH = 1440; // 結束圖片寬度
-        const END_IMAGE_HEIGHT = 810; // 結束圖片高度
-        const END_IMAGE_X = (GAME_WIDTH - END_IMAGE_WIDTH) / 2; // 結束圖片X軸位置
-        const END_IMAGE_Y = GAME_HEIGHT / 2 - END_IMAGE_HEIGHT / 2.2; // 結束圖片Y軸位置
+        const END_IMAGE_WIDTH = 1440;
+        const END_IMAGE_HEIGHT = 810;
+        const END_IMAGE_X = (GAME_WIDTH - END_IMAGE_WIDTH) / 2;
+        const END_IMAGE_Y = GAME_HEIGHT / 2 - END_IMAGE_HEIGHT / 2.2;
 
         let gameWidth = GAME_WIDTH;
         let gameHeight = GAME_HEIGHT;
@@ -183,8 +183,8 @@
 
         let gameStarted = false;
         let gameOver = false;
-        let score = 0; // 一般模式分數
-        let specialScore = 0; // 特殊模式分數
+        let score = 0;
+        let specialScore = 0;
         let time = 0;
         let lastTime = 0;
         let enemies = [];
@@ -198,8 +198,8 @@
         let specialModePrepTime = 0;
         let lastSpawnSide = null;
         let endScreenDelay = 0;
-        let mouseDownTime = null; // 記錄滑鼠按下的時間
-        let titleFadeAlpha = 1; // 標題圖片淡出透明度
+        let mouseDownTime = null;
+        let titleFadeAlpha = 1;
 
         let currentBgIndex = 0;
         let nextBgIndex = 0;
@@ -217,17 +217,17 @@
         let fadingIn = null;
         const bgmNormal = new Audio('bgm_normal.mp3');
         bgmNormal.loop = true;
-        bgmNormal.volume = 1; // 初始音量設為1
+        bgmNormal.volume = 1;
         const bgmEX = new Audio('bgm_ex.mp3');
         bgmEX.loop = true;
-        bgmEX.volume = 1; // 初始音量設為1
+        bgmEX.volume = 1;
         let currentBGM = null;
         const attackSound = new Audio('attack.wav');
-        attackSound.volume = 0.3; // 攻擊音效音量
+        attackSound.volume = 0.3;
         const hitSound = new Audio('hit.wav');
-        hitSound.volume = 0.3; // 擊中音效音量
+        hitSound.volume = 0.3;
         const hitEXSound = new Audio('hitEX.wav');
-        hitEXSound.volume = 0.3; // 特殊模式擊中音效音量
+        hitEXSound.volume = 0.3;
 
         let bgmMuted = false;
         let sfxMuted = false;
@@ -347,6 +347,7 @@
                     checkAssetsLoaded();
                 };
             } else if (asset instanceof Audio) {
+                asset.load(); // 強制預加載音頻
                 asset.oncanplaythrough = () => {
                     assetsLoaded++;
                     console.log(`音效加載成功: ${asset.src}`);
@@ -364,8 +365,11 @@
             console.log(`已加載資源: ${assetsLoaded}/${assetsToLoad.length}`);
             if (assetsLoaded === assetsToLoad.length) {
                 console.log("所有資源加載完成，啟動遊戲");
+                console.log("bgmNormal 加載狀態:", bgmNormal.readyState); // 4 表示已完全加載
+                console.log("bgmEX 加載狀態:", bgmEX.readyState);
                 loadingScreen.style.display = 'none';
                 startScreen.style.display = 'flex';
+                resizeCanvas(); // 初始調整畫布大小
                 requestAnimationFrame(gameLoop);
             }
         }
@@ -385,28 +389,28 @@
         });
 
         const player = {
-            x: PLAYER_X, // 玩家X軸位置
-            y: PLAYER_Y, // 玩家Y軸位置
-            width: PLAYER_WIDTH, // 玩家寬度
-            height: PLAYER_HEIGHT, // 玩家高度
-            attackRange: PLAYER_ATTACK_RANGE // 玩家攻擊範圍
+            x: PLAYER_X,
+            y: PLAYER_Y,
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT,
+            attackRange: PLAYER_ATTACK_RANGE
         };
 
         class Enemy {
             constructor(side) {
-                this.width = ENEMY_WIDTH; // 敵人寬度
-                this.height = ENEMY_HEIGHT; // 敵人高度
-                this.y = ENEMY_Y; // 敵人Y軸位置
-                this.type = Math.floor(Math.random() * 3); // 敵人類型 (0-2)
+                this.width = ENEMY_WIDTH;
+                this.height = ENEMY_HEIGHT;
+                this.y = ENEMY_Y;
+                this.type = Math.floor(Math.random() * 3);
                 this.side = side;
-                this.x = side === 'left' ? 0 : gameWidth - this.width; // 敵人X軸位置
-                this.speed = calculateEnemySpeed() * (0.8 + Math.random() * ENEMY_SPEED_VARIATION); // 敵人速度
+                this.x = side === 'left' ? 0 : gameWidth - this.width;
+                this.speed = calculateEnemySpeed() * (0.8 + Math.random() * ENEMY_SPEED_VARIATION);
                 this.markedForDeletion = false;
             }
         }
 
         function calculateEnemySpeed() {
-            if (isSpecialMode) return SPEED_MAX; // 特殊模式使用最大速度
+            if (isSpecialMode) return SPEED_MAX;
             if (score <= 50) return SPEED_START + (score / 50) * (SPEED_50 - SPEED_START);
             else if (score <= SPEED_CAP_SCORE) return SPEED_50 + ((score - 50) / (SPEED_CAP_SCORE - 50)) * (SPEED_MAX - SPEED_50);
             return SPEED_MAX;
@@ -414,13 +418,13 @@
 
         class DeadEnemy {
             constructor(x, y, side) {
-                this.x = x; // 死亡敵人X軸位置
-                this.y = DEAD_ENEMY_Y_POSITION; // 死亡敵人Y軸位置
+                this.x = x;
+                this.y = DEAD_ENEMY_Y_POSITION;
                 this.side = side;
-                this.width = ENEMY_WIDTH; // 死亡敵人寬度
-                this.height = ENEMY_HEIGHT; // 死亡敵人高度
+                this.width = ENEMY_WIDTH;
+                this.height = ENEMY_HEIGHT;
                 this.time = 0;
-                this.alpha = 1; // 透明度初始值
+                this.alpha = 1;
             }
             update() {
                 this.time += 1/60;
@@ -472,11 +476,10 @@
                     playerAttacking = false;
                     attackDirection = null;
                     attackTimers = 0;
-                    mouseDownTime = null; // 重置滑鼠按下時間
+                    mouseDownTime = null;
                 }
             }
 
-            // 標題圖片淡出邏輯
             if (gameStarted && titleFadeAlpha > 0) {
                 titleFadeAlpha -= 1/60 / TITLE_FADE_DURATION;
                 if (titleFadeAlpha <= 0) {
@@ -552,7 +555,7 @@
                     endScreen.style.display = 'flex';
                     finalScore.textContent = isSpecialMode 
                         ? `Final Score: K${specialScore}` 
-                        : `Final Score: ${score}`; // 顯示對應模式的分數
+                        : `Final Score: ${score}`;
                     if (isSpecialMode) {
                         endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
                     } else {
@@ -569,11 +572,8 @@
                     deadEnemies.push(new DeadEnemy(enemy.x, enemy.y, enemy.side));
                     enemy.markedForDeletion = true;
                     enemies.splice(i, 1);
-                    if (isSpecialMode) {
-                        specialScore += 1; // 特殊模式加分
-                    } else {
-                        score += 1; // 一般模式加分
-                    }
+                    if (isSpecialMode) specialScore += 1;
+                    else score += 1;
                     if (!sfxMuted) {
                         if (isSpecialMode) {
                             hitEXSound.currentTime = 0;
@@ -590,11 +590,8 @@
                     deadEnemies.push(new DeadEnemy(enemy.x, enemy.y, enemy.side));
                     enemy.markedForDeletion = true;
                     enemies.splice(i, 1);
-                    if (isSpecialMode) {
-                        specialScore += 1; // 特殊模式加分
-                    } else {
-                        score += 1; // 一般模式加分
-                    }
+                    if (isSpecialMode) specialScore += 1;
+                    else score += 1;
                     if (!sfxMuted) {
                         if (isSpecialMode) {
                             hitEXSound.currentTime = 0;
@@ -611,11 +608,11 @@
             deadEnemies = deadEnemies.filter(deadEnemy => !deadEnemy.update());
             scoreDisplay.textContent = isSpecialMode 
                 ? `Score: K${specialScore}` 
-                : `Score: ${score}`; // 根據模式顯示即時分數
+                : `Score: ${score}`;
         }
 
         function draw() {
-            ctx.fillStyle = '#333'; // 畫布背景顏色
+            ctx.fillStyle = '#333';
             ctx.fillRect(0, 0, gameWidth, gameHeight);
 
             ctx.globalAlpha = 1;
@@ -644,7 +641,7 @@
                         ctx.drawImage(currentPlayerFrames[animationFrame], player.x - player.width / 2, 
                                     player.y - player.height / 2, player.width, player.height);
                     } else {
-                        ctx.fillStyle = 'blue'; // 玩家未加載時的替代顏色
+                        ctx.fillStyle = 'blue';
                         ctx.fillRect(player.x - player.width / 2, player.y - player.height / 2, 
                                     player.width, player.height);
                     }
@@ -654,7 +651,7 @@
                         ctx.drawImage(currentAttackLeftFrames[animationFrame], player.x - player.attackRange, 
                                     player.y - player.height / 2, player.attackRange, player.height);
                     } else {
-                        ctx.fillStyle = 'red'; // 攻擊未加載時的替代顏色
+                        ctx.fillStyle = 'red';
                         ctx.fillRect(player.x - player.attackRange, player.y - player.height / 2, 
                                     player.attackRange, player.height);
                     }
@@ -664,7 +661,7 @@
                         ctx.drawImage(currentAttackRightFrames[animationFrame], player.x, 
                                     player.y - player.height / 2, player.attackRange, player.height);
                     } else {
-                        ctx.fillStyle = 'red'; // 攻擊未加載時的替代顏色
+                        ctx.fillStyle = 'red';
                         ctx.fillRect(player.x, player.y - player.height / 2, 
                                     player.attackRange, player.height);
                     }
@@ -683,7 +680,7 @@
                         }
                         ctx.restore();
                     } else {
-                        ctx.fillStyle = 'green'; // 敵人未加載時的替代顏色
+                        ctx.fillStyle = 'green';
                         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
                     }
                 });
@@ -709,10 +706,9 @@
                 ctx.globalAlpha = 1;
             }
 
-            // 繪製標題圖片並應用淡出效果
             if (titleFadeAlpha > 0 && titleImage.complete) {
                 ctx.globalAlpha = titleFadeAlpha;
-                const titleWidth = gameWidth * 0.5; // 與 CSS 一致
+                const titleWidth = gameWidth * 0.5;
                 const titleHeight = titleWidth * (titleImage.height / titleImage.width);
                 ctx.drawImage(titleImage, (gameWidth - titleWidth) / 2, (gameHeight - titleHeight) / 3, titleWidth, titleHeight);
                 ctx.globalAlpha = 1;
@@ -724,6 +720,35 @@
             draw();
             requestAnimationFrame(gameLoop);
         }
+
+        // 動態調整 Canvas 大小以適應視口
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            // 計算適應視口的寬高，保持 16:9 比例
+            let width = vw;
+            let height = width * (9 / 16);
+            if (height > vh) {
+                height = vh;
+                width = height * (16 / 9);
+            }
+
+            // 設置容器大小
+            container.style.width = `${width}px`;
+            container.style.height = `${height}px`;
+
+            // 設置 Canvas 顯示大小，但保持邏輯分辨率
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+        }
+
+        // 監聽窗口大小和方向變化
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', resizeCanvas);
 
         let inputBuffer = '';
         document.addEventListener('keydown', (e) => {
@@ -809,7 +834,7 @@
             }
         });
 
-       gameContainer.addEventListener('mousedown', (e) => {
+        gameContainer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             console.log(`滑鼠點擊: ${e.button}`);
             if (!gameStarted) {
@@ -820,7 +845,7 @@
                 if (e.button === 0) {
                     playerAttacking = true;
                     attackDirection = 'left';
-                    attackTimers = 0; // 重置計時器，但不影響持續攻擊
+                    attackTimers = 0;
                     if (!isSpecialMode && score < 100 && !sfxMuted) {
                         attackSound.currentTime = 0;
                         attackSound.play();
@@ -828,7 +853,7 @@
                 } else if (e.button === 2) {
                     playerAttacking = true;
                     attackDirection = 'right';
-                    attackTimers = 0; // 重置計時器，但不影響持續攻擊
+                    attackTimers = 0;
                     if (!isSpecialMode && score < 100 && !sfxMuted) {
                         attackSound.currentTime = 0;
                         attackSound.play();
@@ -837,7 +862,7 @@
             }
         });
 
-      gameContainer.addEventListener('mouseup', (e) => {
+        gameContainer.addEventListener('mouseup', (e) => {
             e.preventDefault();
             if (playerAttacking) {
                 playerAttacking = false;
@@ -898,13 +923,13 @@
             time = 0;
             specialModePrepTime = 0;
             enemies = [];
-            score = 0; // 重置一般模式分數
-            specialScore = 0; // 重置特殊模式分數
+            score = 0;
+            specialScore = 0;
             endImageAlpha = 0;
             lastTime = 0;
             lastSpawnSide = null;
-            inputBuffer = ''; // 重置輸入緩衝區
-            titleFadeAlpha = 1; // 開始淡出標題圖片
+            inputBuffer = '';
+            titleFadeAlpha = 1;
 
             if (isSpecialMode) {
                 if (currentBGM) currentBGM.pause();
@@ -927,7 +952,7 @@
         function restartGame() {
             console.log("遊戲重啟");
             gameOver = false;
-            gameStarted = true; // 確保遊戲進入開始狀態
+            gameStarted = true;
             endScreen.style.display = 'none';
             time = 0;
             enemies = [];
@@ -937,10 +962,10 @@
             specialModePrepTime = 0;
             selectedEndImage = null;
             lastSpawnSide = null;
-            score = 0; // 重置一般模式分數
-            specialScore = 0; // 重置特殊模式分數
-            endScreenDelay = 0; // 重置結束畫面延遲
-            inputBuffer = ''; // 重置輸入緩衝區
+            score = 0;
+            specialScore = 0;
+            endScreenDelay = 0;
+            inputBuffer = '';
 
             if (isSpecialMode) {
                 if (currentBGM) currentBGM.pause();
@@ -948,7 +973,7 @@
                 currentBGM.currentTime = 0;
                 currentBGM.volume = 1;
                 if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式重啟BGM播放失敗:', e));
-                scoreDisplay.textContent = `Score: K${specialScore}`; // 更新即時分數顯示
+                scoreDisplay.textContent = `Score: K${specialScore}`;
                 endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
             } else {
                 if (currentBGM) currentBGM.pause();
@@ -956,8 +981,8 @@
                 currentBGM.currentTime = 0;
                 currentBGM.volume = 1;
                 if (!bgmMuted) currentBGM.play().catch(e => console.error('正常模式重啟BGM播放失敗:', e));
-                enemies.push(new Enemy('left'), new Enemy('right')); // 初始敵人
-                scoreDisplay.textContent = `Score: ${score}`; // 更新即時分數顯示
+                enemies.push(new Enemy('left'), new Enemy('right'));
+                scoreDisplay.textContent = `Score: ${score}`;
                 endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
             }
         }
