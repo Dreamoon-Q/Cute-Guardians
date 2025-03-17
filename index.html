@@ -16,9 +16,9 @@
         }
         #gameContainer {
             width: 100%;
-            max-width: 1920px; /* 恢復最大寬度限制 */
-            max-height: 100vh; /* 限制高度不超出視口 */
-            aspect-ratio: 16 / 9; /* 保持 16:9 比例 */
+            max-width: 1920px;
+            max-height: 100vh;
+            aspect-ratio: 16 / 9;
             position: relative;
             display: flex;
             justify-content: center;
@@ -110,7 +110,7 @@
         <div id="soundControls">
             <button id="bgmButton">BGM On</button>
             <button id="sfxButton">SFX On</button>
-            <button id="fullscreenButton">Fullscreen</button> <!-- 新增全屏按鈕 -->
+            <button id="fullscreenButton">Fullscreen</button>
         </div>
     </div>
 
@@ -125,7 +125,7 @@
         const gameContainer = document.getElementById('gameContainer');
         const bgmButton = document.getElementById('bgmButton');
         const sfxButton = document.getElementById('sfxButton');
-        const fullscreenButton = document.getElementById('fullscreenButton'); // 全屏按鈕 DOM
+        const fullscreenButton = document.getElementById('fullscreenButton');
 
         const GAME_WIDTH = 1920;
         const GAME_HEIGHT = 1080;
@@ -150,9 +150,9 @@
         const SPAWN_RATE_50 = 500;
         const SPAWN_RATE_75 = 400;
         const SPAWN_RATE_100 = 250;
-        const SPAWN_RATE_200 = 150;
-        const SPAWN_RATE_MIN = 150;
-        const SPAWN_CAP_SCORE = 100;
+        const SPAWN_RATE_200 = 100;
+        const SPAWN_RATE_MIN = 100;
+        const SPAWN_CAP_SCORE = 200;
         const MIN_SIDE_INTERVAL = 200;
         const BG_SWITCH_SCORE_INTERVAL = 20;
 
@@ -314,6 +314,8 @@
             img.src = `end${i}.png`;
             return img;
         });
+        const endEX = new Image();
+        endEX.src = 'endEX.png';
         const kFrames = Array(4).fill().map((_, i) => {
             const img = new Image();
             img.src = `K_frame${i}.png`;
@@ -324,6 +326,11 @@
             img.src = `K_frame${i}_EX.png`;
             return img;
         });
+        const kFramesSpecial = Array(2).fill().map((_, i) => {
+            const img = new Image();
+            img.src = `K_special_frame${i}.png`;
+            return img;
+        });
         const titleImage = new Image();
         titleImage.src = 'title.png';
 
@@ -331,8 +338,8 @@
             ...playerFrames, ...attackLeftFrames, ...attackRightFrames,
             ...playerFramesEX, ...attackLeftFramesEX, ...attackRightFramesEX,
             ...playerFramesEX2, ...attackLeftFramesEX2, ...attackRightFramesEX2,
-            ...enemyFrames.flat(), enemyDeadFrame, ...backgrounds, backgroundEX, ...endImages,
-            ...kFrames, ...kFramesEX, titleImage, bgmNormal, bgmEX, attackSound, hitSound, hitEXSound
+            ...enemyFrames.flat(), enemyDeadFrame, ...backgrounds, backgroundEX, ...endImages, endEX,
+            ...kFrames, ...kFramesEX, ...kFramesSpecial, titleImage, bgmNormal, bgmEX, attackSound, hitSound, hitEXSound
         ];
         let assetsLoaded = 0;
 
@@ -390,14 +397,13 @@
             console.log(`SFX 靜音狀態: ${sfxMuted}`);
         });
 
-        // 全屏按鈕事件
         fullscreenButton.addEventListener('click', () => {
             const elem = document.documentElement;
             if (elem.requestFullscreen) {
                 elem.requestFullscreen().catch(e => console.error('全屏請求失敗:', e));
-            } else if (elem.webkitRequestFullscreen) { // Safari
+            } else if (elem.webkitRequestFullscreen) {
                 elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) { // IE11
+            } else if (elem.msRequestFullscreen) {
                 elem.msRequestFullscreen();
             }
         });
@@ -482,7 +488,7 @@
             if (isSpecialMode && specialModePrepTime < SPECIAL_MODE_PREP_DURATION) specialModePrepTime += 1/60;
             if (!gameOver) spawnEnemy();
 
-            animationFrame = Math.floor(time / FRAME_DURATION) % 4;
+            animationFrame = Math.floor(time / FRAME_DURATION) % (isSpecialMode ? 2 : 4); // 特殊模式只有 2 幀
 
             if (playerAttacking) {
                 attackTimers += 1/60;
@@ -575,7 +581,15 @@
                     } else {
                         endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
                     }
-                    if (!selectedEndImage) selectedEndImage = endImages[Math.floor(Math.random() * endImages.length)];
+                    if (!selectedEndImage) {
+                        if (isSpecialMode) {
+                            selectedEndImage = endEX; // 特殊模式使用 endEX
+                        } else if (score < 80) {
+                            selectedEndImage = endImages[Math.floor(Math.random() * 2)]; // end0 或 end1
+                        } else {
+                            selectedEndImage = endImages[2 + Math.floor(Math.random() * 2)]; // end2 或 end3
+                        }
+                    }
                     if (currentBGM) currentBGM.pause();
                     endScreenDelay = 0;
                     break;
@@ -642,7 +656,7 @@
                 const currentPlayerFrames = isSpecialMode ? playerFramesEX2 : (score >= 80 ? playerFramesEX : playerFrames);
                 const currentAttackLeftFrames = isSpecialMode ? attackLeftFramesEX2 : (score >= 80 ? attackLeftFramesEX : attackLeftFrames);
                 const currentAttackRightFrames = isSpecialMode ? attackRightFramesEX2 : (score >= 80 ? attackRightFramesEX : attackRightFrames);
-                const currentKFrames = (isSpecialMode || score >= 80) ? kFramesEX : kFrames;
+                const currentKFrames = isSpecialMode ? kFramesSpecial : (score >= 80 ? kFramesEX : kFrames); // 特殊模式使用 kFramesSpecial
 
                 if (currentKFrames[animationFrame].complete) {
                     const kWidth = player.width * K_WIDTH_SCALE;
@@ -740,21 +754,19 @@
             const vw = window.innerWidth;
             const vh = window.innerHeight;
 
-            // 計算寬高，保持 16:9 比例，並限制最大寬度為 1920px
-            let width = Math.min(vw, 1920); // 寬度不超過 1920px 或視口寬度
-            let height = width * (9 / 16);  // 根據寬度計算高度
-            if (height > vh) {              // 如果高度超出視口，則按視口高度調整
+            let width = Math.min(vw, 1920);
+            let height = width * (9 / 16);
+            if (height > vh) {
                 height = vh;
                 width = height * (16 / 9);
             }
 
-            // 應用計算出的寬高
             container.style.width = `${width}px`;
             container.style.height = `${height}px`;
 
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
-            canvas.width = GAME_WIDTH;   // 保持邏輯分辨率
+            canvas.width = GAME_WIDTH;
             canvas.height = GAME_HEIGHT;
         }
 
