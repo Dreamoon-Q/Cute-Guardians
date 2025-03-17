@@ -12,13 +12,13 @@
             align-items: center;
             min-height: 100vh;
             background: #000;
-            overflow: hidden; /* 防止滾動條出現 */
+            overflow: hidden;
         }
         #gameContainer {
             width: 100%;
-            max-width: 1920px;
-            max-height: 100vh; /* 限制最大高度為視口高度 */
-            aspect-ratio: 16 / 9;
+            max-width: 1920px; /* 恢復最大寬度限制 */
+            max-height: 100vh; /* 限制高度不超出視口 */
+            aspect-ratio: 16 / 9; /* 保持 16:9 比例 */
             position: relative;
             display: flex;
             justify-content: center;
@@ -29,7 +29,7 @@
             height: 100%;
             display: block;
             touch-action: none;
-            object-fit: contain; /* 保持比例並適應容器 */
+            object-fit: contain;
         }
         #startScreen {
             position: absolute;
@@ -79,7 +79,7 @@
             display: flex;
             gap: 10px;
         }
-        #bgmButton, #sfxButton {
+        #bgmButton, #sfxButton, #fullscreenButton {
             width: 80px;
             height: 40px;
             font-size: 16px;
@@ -91,7 +91,7 @@
             transition: background 0.3s;
             touch-action: manipulation;
         }
-        #bgmButton:hover, #sfxButton:hover {
+        #bgmButton:hover, #sfxButton:hover, #fullscreenButton:hover {
             background: rgba(255, 255, 255, 0.4);
         }
     </style>
@@ -110,6 +110,7 @@
         <div id="soundControls">
             <button id="bgmButton">BGM On</button>
             <button id="sfxButton">SFX On</button>
+            <button id="fullscreenButton">Fullscreen</button> <!-- 新增全屏按鈕 -->
         </div>
     </div>
 
@@ -124,6 +125,7 @@
         const gameContainer = document.getElementById('gameContainer');
         const bgmButton = document.getElementById('bgmButton');
         const sfxButton = document.getElementById('sfxButton');
+        const fullscreenButton = document.getElementById('fullscreenButton'); // 全屏按鈕 DOM
 
         const GAME_WIDTH = 1920;
         const GAME_HEIGHT = 1080;
@@ -347,7 +349,7 @@
                     checkAssetsLoaded();
                 };
             } else if (asset instanceof Audio) {
-                asset.load(); // 強制預加載音頻
+                asset.load();
                 asset.oncanplaythrough = () => {
                     assetsLoaded++;
                     console.log(`音效加載成功: ${asset.src}`);
@@ -365,11 +367,11 @@
             console.log(`已加載資源: ${assetsLoaded}/${assetsToLoad.length}`);
             if (assetsLoaded === assetsToLoad.length) {
                 console.log("所有資源加載完成，啟動遊戲");
-                console.log("bgmNormal 加載狀態:", bgmNormal.readyState); // 4 表示已完全加載
+                console.log("bgmNormal 加載狀態:", bgmNormal.readyState);
                 console.log("bgmEX 加載狀態:", bgmEX.readyState);
                 loadingScreen.style.display = 'none';
                 startScreen.style.display = 'flex';
-                resizeCanvas(); // 初始調整畫布大小
+                resizeCanvas();
                 requestAnimationFrame(gameLoop);
             }
         }
@@ -386,6 +388,18 @@
             sfxMuted = !sfxMuted;
             sfxButton.textContent = sfxMuted ? 'SFX Off' : 'SFX On';
             console.log(`SFX 靜音狀態: ${sfxMuted}`);
+        });
+
+        // 全屏按鈕事件
+        fullscreenButton.addEventListener('click', () => {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(e => console.error('全屏請求失敗:', e));
+            } else if (elem.webkitRequestFullscreen) { // Safari
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { // IE11
+                elem.msRequestFullscreen();
+            }
         });
 
         const player = {
@@ -721,32 +735,29 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // 動態調整 Canvas 大小以適應視口
         function resizeCanvas() {
             const container = document.getElementById('gameContainer');
             const vw = window.innerWidth;
             const vh = window.innerHeight;
 
-            // 計算適應視口的寬高，保持 16:9 比例
-            let width = vw;
-            let height = width * (9 / 16);
-            if (height > vh) {
+            // 計算寬高，保持 16:9 比例，並限制最大寬度為 1920px
+            let width = Math.min(vw, 1920); // 寬度不超過 1920px 或視口寬度
+            let height = width * (9 / 16);  // 根據寬度計算高度
+            if (height > vh) {              // 如果高度超出視口，則按視口高度調整
                 height = vh;
                 width = height * (16 / 9);
             }
 
-            // 設置容器大小
+            // 應用計算出的寬高
             container.style.width = `${width}px`;
             container.style.height = `${height}px`;
 
-            // 設置 Canvas 顯示大小，但保持邏輯分辨率
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
-            canvas.width = GAME_WIDTH;
+            canvas.width = GAME_WIDTH;   // 保持邏輯分辨率
             canvas.height = GAME_HEIGHT;
         }
 
-        // 監聽窗口大小和方向變化
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
 
