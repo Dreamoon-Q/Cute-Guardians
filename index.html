@@ -113,902 +113,903 @@
             <button id="fullscreenButton">Fullscreen</button>
         </div>
     </div>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startScreen = document.getElementById('startScreen');
+    const endScreen = document.getElementById('endScreen');
+    const loadingScreen = document.getElementById('loadingScreen');
+    const finalScore = document.getElementById('finalScore');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const gameContainer = document.getElementById('gameContainer');
+    const bgmButton = document.getElementById('bgmButton');
+    const sfxButton = document.getElementById('sfxButton');
+    const fullscreenButton = document.getElementById('fullscreenButton');
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('startScreen');
-        const endScreen = document.getElementById('endScreen');
-        const loadingScreen = document.getElementById('loadingScreen');
-        const finalScore = document.getElementById('finalScore');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const gameContainer = document.getElementById('gameContainer');
-        const bgmButton = document.getElementById('bgmButton');
-        const sfxButton = document.getElementById('sfxButton');
-        const fullscreenButton = document.getElementById('fullscreenButton');
+    const GAME_WIDTH = 1920;
+    const GAME_HEIGHT = 1080;
+    const ATTACK_DURATION_SHORT = 0.2;
+    const ATTACK_DURATION_LONG = 0.5;
+    const SPECIAL_MODE_PREP_DURATION = 2;
+    const END_SCREEN_DELAY_DURATION = 2;
+    const TRANSITION_DURATION = 1;
+    const FRAME_DURATION = 0.5;
+    const DEAD_ANIMATION_DURATION = 0.5;
+    const DEAD_SPEED_X = 100;
+    const DEAD_SPEED_Y = -200;
+    const END_FADE_DURATION = 1;
+    const MUSIC_FADE_DURATION = 1;
+    const TITLE_FADE_DURATION = 2;
+    const SPEED_START = 2;
+    const SPEED_50 = 8;
+    const SPEED_MAX = 17;
+    const SPEED_CAP_SCORE = 200;
+    const SPAWN_RATE_START = 800;
+    const SPAWN_RATE_25 = 600;
+    const SPAWN_RATE_50 = 500;
+    const SPAWN_RATE_75 = 400;
+    const SPAWN_RATE_100 = 250;
+    const SPAWN_RATE_200 = 100;
+    const SPAWN_RATE_MIN = 100;
+    const SPAWN_CAP_SCORE = 200;
+    const MIN_SIDE_INTERVAL = 200;
+    const BG_SWITCH_SCORE_INTERVAL = 20;
 
-        const GAME_WIDTH = 1920;
-        const GAME_HEIGHT = 1080;
-        const ATTACK_DURATION_SHORT = 0.2;
-        const ATTACK_DURATION_LONG = 0.5;
-        const SPECIAL_MODE_PREP_DURATION = 2;
-        const END_SCREEN_DELAY_DURATION = 2;
-        const TRANSITION_DURATION = 1;
-        const FRAME_DURATION = 0.5;
-        const DEAD_ANIMATION_DURATION = 0.5;
-        const DEAD_SPEED_X = 100;
-        const DEAD_SPEED_Y = -200;
-        const END_FADE_DURATION = 1;
-        const MUSIC_FADE_DURATION = 1;
-        const TITLE_FADE_DURATION = 2;
-        const SPEED_START = 2;
-        const SPEED_50 = 8;
-        const SPEED_MAX = 17;
-        const SPEED_CAP_SCORE = 200;
-        const SPAWN_RATE_START = 800;
-        const SPAWN_RATE_25 = 600;
-        const SPAWN_RATE_50 = 500;
-        const SPAWN_RATE_75 = 400;
-        const SPAWN_RATE_100 = 250;
-        const SPAWN_RATE_200 = 100;
-        const SPAWN_RATE_MIN = 100;
-        const SPAWN_CAP_SCORE = 200;
-        const MIN_SIDE_INTERVAL = 200;
-        const BG_SWITCH_SCORE_INTERVAL = 20;
+    const PLAYER_X = GAME_WIDTH / 2;
+    const PLAYER_Y = GAME_HEIGHT * 0.78;
+    const PLAYER_WIDTH = 200;
+    const PLAYER_HEIGHT = 200;
+    const PLAYER_ATTACK_RANGE = 300;
 
-        const PLAYER_X = GAME_WIDTH / 2;
-        const PLAYER_Y = GAME_HEIGHT * 0.75;
-        const PLAYER_WIDTH = 200;
-        const PLAYER_HEIGHT = 200;
-        const PLAYER_ATTACK_RANGE = 300;
+    const ENEMY_WIDTH = 140;
+    const ENEMY_HEIGHT = 140;
+    const ENEMY_Y = GAME_HEIGHT * 0.79 - ENEMY_HEIGHT / 2;
+    const ENEMY_SPEED_VARIATION = 0.4;
 
-        const ENEMY_WIDTH = 140;
-        const ENEMY_HEIGHT = 140;
-        const ENEMY_Y = GAME_HEIGHT * 0.76 - ENEMY_HEIGHT / 2;
-        const ENEMY_SPEED_VARIATION = 0.4;
+    const K_WIDTH_SCALE = 1.2;
+    const K_HEIGHT_SCALE = 1.2;
+    const K_Y_POSITION = GAME_HEIGHT * 0.65;
 
-        const K_WIDTH_SCALE = 1.2;
-        const K_HEIGHT_SCALE = 1.2;
-        const K_Y_POSITION = GAME_HEIGHT * 0.63;
+    const DEAD_ENEMY_Y_POSITION = ENEMY_Y;
 
-        const DEAD_ENEMY_Y_POSITION = ENEMY_Y;
+    const END_IMAGE_WIDTH = 1600;
+    const END_IMAGE_HEIGHT = 900;
+    const END_IMAGE_X = (GAME_WIDTH - END_IMAGE_WIDTH) / 2;
+    const END_IMAGE_Y = GAME_HEIGHT / 2 - END_IMAGE_HEIGHT / 2.2;
 
-        const END_IMAGE_WIDTH = 1440;
-        const END_IMAGE_HEIGHT = 810;
-        const END_IMAGE_X = (GAME_WIDTH - END_IMAGE_WIDTH) / 2;
-        const END_IMAGE_Y = GAME_HEIGHT / 2 - END_IMAGE_HEIGHT / 2.2;
+    let gameWidth = GAME_WIDTH;
+    let gameHeight = GAME_HEIGHT;
+    canvas.width = gameWidth;
+    canvas.height = gameHeight;
 
-        let gameWidth = GAME_WIDTH;
-        let gameHeight = GAME_HEIGHT;
-        canvas.width = gameWidth;
-        canvas.height = gameHeight;
+    let gameStarted = false;
+    let gameOver = false;
+    let score = 0;
+    let specialScore = 0;
+    let time = 0;
+    let lastTime = 0;
+    let enemies = [];
+    let playerAttacking = false;
+    let attackDirection = null;
+    let attackTimers = 0;
+    let keyPressed = { left: false, right: false };
+    let keyReleased = { left: true, right: true };
+    let currentAttackDuration = ATTACK_DURATION_LONG;
+    let isSpecialMode = false;
+    let specialModePrepTime = 0;
+    let lastSpawnSide = null;
+    let endScreenDelay = 0;
+    let mouseDownTime = null;
+    let titleFadeAlpha = 1;
 
-        let gameStarted = false;
-        let gameOver = false;
-        let score = 0;
-        let specialScore = 0;
-        let time = 0;
-        let lastTime = 0;
-        let enemies = [];
-        let playerAttacking = false;
-        let attackDirection = null;
-        let attackTimers = 0;
-        let keyPressed = { left: false, right: false };
-        let keyReleased = { left: true, right: true };
-        let currentAttackDuration = ATTACK_DURATION_LONG;
-        let isSpecialMode = false;
-        let specialModePrepTime = 0;
-        let lastSpawnSide = null;
-        let endScreenDelay = 0;
-        let mouseDownTime = null;
-        let titleFadeAlpha = 1;
+    let currentBgIndex = 0;
+    let nextBgIndex = 0;
+    let bgTransition = 0;
 
-        let currentBgIndex = 0;
-        let nextBgIndex = 0;
-        let bgTransition = 0;
+    let animationFrame = 0;
 
-        let animationFrame = 0;
+    let deadEnemies = [];
 
-        let deadEnemies = [];
+    let endImageAlpha = 0;
+    let selectedEndImage = null;
 
-        let endImageAlpha = 0;
-        let selectedEndImage = null;
+    let musicTransition = 0;
+    let fadingOut = null;
+    let fadingIn = null;
+    const bgmNormal = new Audio('bgm_normal.mp3');
+    bgmNormal.loop = true;
+    bgmNormal.volume = 1;
+    const bgmEX = new Audio('bgm_EX.mp3');
+    bgmEX.loop = true;
+    bgmEX.volume = 1;
+    let currentBGM = null;
+    const attackSound = new Audio('attack.wav');
+    attackSound.volume = 0.3;
+    const hitSound = new Audio('hit.wav');
+    hitSound.volume = 0.3;
+    const hitEXSound = new Audio('hitEX.wav');
+    hitEXSound.volume = 0.3;
 
-        let musicTransition = 0;
-        let fadingOut = null;
-        let fadingIn = null;
-        const bgmNormal = new Audio('bgm_normal.mp3');
-        bgmNormal.loop = true;
-        bgmNormal.volume = 1;
-        const bgmEX = new Audio('bgm_EX.mp3');
-        bgmEX.loop = true;
-        bgmEX.volume = 1;
-        let currentBGM = null;
-        const attackSound = new Audio('attack.wav');
-        attackSound.volume = 0.3;
-        const hitSound = new Audio('hit.wav');
-        hitSound.volume = 0.3;
-        const hitEXSound = new Audio('hitEX.wav');
-        hitEXSound.volume = 0.3;
+    let bgmMuted = false;
+    let sfxMuted = false;
 
-        let bgmMuted = false;
-        let sfxMuted = false;
-
-        const playerFrames = Array(4).fill().map((_, i) => {
+    const playerFrames = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `player_frame${i}.png`;
+        return img;
+    });
+    const attackLeftFrames = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `attack_left_frame${i}.png`;
+        return img;
+    });
+    const attackRightFrames = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `attack_right_frame${i}.png`;
+        return img;
+    });
+    const playerFramesEX = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `player_frame${i}_EX.png`;
+        return img;
+    });
+    const attackLeftFramesEX = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `attack_left_frame${i}_EX.png`;
+        return img;
+    });
+    const attackRightFramesEX = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `attack_right_frame${i}_EX.png`;
+        return img;
+    });
+    const playerFramesEX2 = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `player_frame${i}_EX2.png`;
+        return img;
+    });
+    const attackLeftFramesEX2 = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `attack_left_frame${i}_EX2.png`;
+        return img;
+    });
+    const attackRightFramesEX2 = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `attack_right_frame${i}_EX2.png`;
+        return img;
+    });
+    const enemyFrames = [
+        Array(4).fill().map((_, i) => {
             const img = new Image();
-            img.src = `player_frame${i}.png`;
+            img.src = `enemy0_frame${i}.png`;
             return img;
-        });
-        const attackLeftFrames = Array(4).fill().map((_, i) => {
+        }),
+        Array(4).fill().map((_, i) => {
             const img = new Image();
-            img.src = `attack_left_frame${i}.png`;
+            img.src = `enemy1_frame${i}.png`;
             return img;
-        });
-        const attackRightFrames = Array(4).fill().map((_, i) => {
+        }),
+        Array(4).fill().map((_, i) => {
             const img = new Image();
-            img.src = `attack_right_frame${i}.png`;
+            img.src = `enemy2_frame${i}.png`;
             return img;
-        });
-        const playerFramesEX = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `player_frame${i}_EX.png`;
-            return img;
-        });
-        const attackLeftFramesEX = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `attack_left_frame${i}_EX.png`;
-            return img;
-        });
-        const attackRightFramesEX = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `attack_right_frame${i}_EX.png`;
-            return img;
-        });
-        const playerFramesEX2 = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `player_frame${i}_EX2.png`;
-            return img;
-        });
-        const attackLeftFramesEX2 = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `attack_left_frame${i}_EX2.png`;
-            return img;
-        });
-        const attackRightFramesEX2 = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `attack_right_frame${i}_EX2.png`;
-            return img;
-        });
-        const enemyFrames = [
-            Array(4).fill().map((_, i) => {
-                const img = new Image();
-                img.src = `enemy0_frame${i}.png`;
-                return img;
-            }),
-            Array(4).fill().map((_, i) => {
-                const img = new Image();
-                img.src = `enemy1_frame${i}.png`;
-                return img;
-            }),
-            Array(4).fill().map((_, i) => {
-                const img = new Image();
-                img.src = `enemy2_frame${i}.png`;
-                return img;
-            })
-        ];
-        const enemyDeadFrame = new Image();
-        enemyDeadFrame.src = 'enemy_dead.png';
-        const backgrounds = [
-            new Image(), new Image(), new Image(),
-            new Image(), new Image()
-        ];
-        backgrounds[0].src = 'bg1.png';
-        backgrounds[1].src = 'bg2.png';
-        backgrounds[2].src = 'bg3.png';
-        backgrounds[3].src = 'bg4.png';
-        backgrounds[4].src = 'bg5.png';
-        const backgroundEX = new Image();
-        backgroundEX.src = 'bg_EX.png';
-        const endImages = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `end${i}.png`;
-            return img;
-        });
-        const endEX = new Image();
-        endEX.src = 'endEX.png';
-        const kFrames = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `K_frame${i}.png`;
-            return img;
-        });
-        const kFramesEX = Array(4).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `K_frame${i}_EX.png`;
-            return img;
-        });
-        const kFramesSpecial = Array(2).fill().map((_, i) => {
-            const img = new Image();
-            img.src = `K_special_frame${i}.png`;
-            return img;
-        });
-        const titleImage = new Image();
-        titleImage.src = 'title.png';
+        })
+    ];
+    const enemyDeadFrame = new Image();
+    enemyDeadFrame.src = 'enemy_dead.png';
+    const backgrounds = [
+        new Image(), new Image(), new Image(),
+        new Image(), new Image()
+    ];
+    backgrounds[0].src = 'bg1.png';
+    backgrounds[1].src = 'bg2.png';
+    backgrounds[2].src = 'bg3.png';
+    backgrounds[3].src = 'bg4.png';
+    backgrounds[4].src = 'bg5.png';
+    const backgroundEX = new Image();
+    backgroundEX.src = 'bg_EX.png';
+    const endImages = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `end${i}.png`;
+        return img;
+    });
+    const endEX = new Image();
+    endEX.src = 'endEX.png';
+    const kFrames = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `K_frame${i}.png`;
+        return img;
+    });
+    const kFramesEX = Array(4).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `K_frame${i}_EX.png`;
+        return img;
+    });
+    const kFramesSpecial = Array(2).fill().map((_, i) => {
+        const img = new Image();
+        img.src = `K_special_frame${i}.png`;
+        return img;
+    });
+    const titleImage = new Image();
+    titleImage.src = 'title.png';
 
-        const assetsToLoad = [
-            ...playerFrames, ...attackLeftFrames, ...attackRightFrames,
-            ...playerFramesEX, ...attackLeftFramesEX, ...attackRightFramesEX,
-            ...playerFramesEX2, ...attackLeftFramesEX2, ...attackRightFramesEX2,
-            ...enemyFrames.flat(), enemyDeadFrame, ...backgrounds, backgroundEX, ...endImages, endEX,
-            ...kFrames, ...kFramesEX, ...kFramesSpecial, titleImage, bgmNormal, bgmEX, attackSound, hitSound, hitEXSound
-        ];
-        let assetsLoaded = 0;
+    const assetsToLoad = [
+        ...playerFrames, ...attackLeftFrames, ...attackRightFrames,
+        ...playerFramesEX, ...attackLeftFramesEX, ...attackRightFramesEX,
+        ...playerFramesEX2, ...attackLeftFramesEX2, ...attackRightFramesEX2,
+        ...enemyFrames.flat(), enemyDeadFrame, ...backgrounds, backgroundEX, ...endImages, endEX,
+        ...kFrames, ...kFramesEX, ...kFramesSpecial, titleImage, bgmNormal, bgmEX, attackSound, hitSound, hitEXSound
+    ];
+    let assetsLoaded = 0;
 
-        assetsToLoad.forEach(asset => {
-            if (asset instanceof Image) {
-                asset.onload = () => {
-                    assetsLoaded++;
-                    console.log(`圖片加載成功: ${asset.src}`);
-                    checkAssetsLoaded();
-                };
-                asset.onerror = () => {
-                    console.error(`圖片加載失敗: ${asset.src}`);
-                    assetsLoaded++;
-                    checkAssetsLoaded();
-                };
-            } else if (asset instanceof Audio) {
-                asset.load();
-                asset.oncanplaythrough = () => {
-                    assetsLoaded++;
-                    console.log(`音效加載成功: ${asset.src}`);
-                    checkAssetsLoaded();
-                };
-                asset.onerror = () => {
-                    console.error(`音效加載失敗: ${asset.src}`);
-                    assetsLoaded++;
-                    checkAssetsLoaded();
-                };
-            }
-        });
-
-        function checkAssetsLoaded() {
-            console.log(`已加載資源: ${assetsLoaded}/${assetsToLoad.length}`);
-            if (assetsLoaded === assetsToLoad.length) {
-                console.log("所有資源加載完成，啟動遊戲");
-                console.log("bgmNormal 加載狀態:", bgmNormal.readyState);
-                console.log("bgmEX 加載狀態:", bgmEX.readyState);
-                loadingScreen.style.display = 'none';
-                startScreen.style.display = 'flex';
-                resizeCanvas();
-                requestAnimationFrame(gameLoop);
-            }
+    assetsToLoad.forEach(asset => {
+        if (asset instanceof Image) {
+            asset.onload = () => {
+                assetsLoaded++;
+                console.log(`圖片加載成功: ${asset.src}`);
+                checkAssetsLoaded();
+            };
+            asset.onerror = () => {
+                console.error(`圖片加載失敗: ${asset.src}`);
+                assetsLoaded++;
+                checkAssetsLoaded();
+            };
+        } else if (asset instanceof Audio) {
+            asset.load();
+            asset.oncanplaythrough = () => {
+                assetsLoaded++;
+                console.log(`音效加載成功: ${asset.src}`);
+                checkAssetsLoaded();
+            };
+            asset.onerror = () => {
+                console.error(`音效加載失敗: ${asset.src}`);
+                assetsLoaded++;
+                checkAssetsLoaded();
+            };
         }
+    });
 
-        bgmButton.addEventListener('click', () => {
-            bgmMuted = !bgmMuted;
-            bgmButton.textContent = bgmMuted ? 'BGM Off' : 'BGM On';
-            if (bgmMuted && currentBGM) currentBGM.pause();
-            else if (!bgmMuted && gameStarted && currentBGM) currentBGM.play().catch(e => console.error('BGM播放失敗:', e));
-            console.log(`BGM 靜音狀態: ${bgmMuted}`);
-        });
-
-        sfxButton.addEventListener('click', () => {
-            sfxMuted = !sfxMuted;
-            sfxButton.textContent = sfxMuted ? 'SFX Off' : 'SFX On';
-            console.log(`SFX 靜音狀態: ${sfxMuted}`);
-        });
-
-        fullscreenButton.addEventListener('click', () => {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(e => console.error('全屏請求失敗:', e));
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            }
-        });
-
-        const player = {
-            x: PLAYER_X,
-            y: PLAYER_Y,
-            width: PLAYER_WIDTH,
-            height: PLAYER_HEIGHT,
-            attackRange: PLAYER_ATTACK_RANGE
-        };
-
-        class Enemy {
-            constructor(side) {
-                this.width = ENEMY_WIDTH;
-                this.height = ENEMY_HEIGHT;
-                this.y = ENEMY_Y;
-                this.type = Math.floor(Math.random() * 3);
-                this.side = side;
-                this.x = side === 'left' ? 0 : gameWidth - this.width;
-                this.speed = calculateEnemySpeed() * (0.8 + Math.random() * ENEMY_SPEED_VARIATION);
-                this.markedForDeletion = false;
-            }
-        }
-
-        function calculateEnemySpeed() {
-            if (isSpecialMode) return SPEED_MAX;
-            if (score <= 50) return SPEED_START + (score / 50) * (SPEED_50 - SPEED_START);
-            else if (score <= SPEED_CAP_SCORE) return SPEED_50 + ((score - 50) / (SPEED_CAP_SCORE - 50)) * (SPEED_MAX - SPEED_50);
-            return SPEED_MAX;
-        }
-
-        class DeadEnemy {
-            constructor(x, y, side) {
-                this.x = x;
-                this.y = DEAD_ENEMY_Y_POSITION;
-                this.side = side;
-                this.width = ENEMY_WIDTH;
-                this.height = ENEMY_HEIGHT;
-                this.time = 0;
-                this.alpha = 1;
-            }
-            update() {
-                this.time += 1/60;
-                this.x += DEAD_SPEED_X * (this.side === 'left' ? -1 : 1) / 60;
-                this.y += DEAD_SPEED_Y / 60;
-                this.alpha = 1 - this.time / DEAD_ANIMATION_DURATION;
-                return this.time >= DEAD_ANIMATION_DURATION;
-            }
-        }
-
-        function spawnEnemy() {
-            if (isSpecialMode && specialModePrepTime < SPECIAL_MODE_PREP_DURATION) return;
-
-            let spawnRate;
-            if (isSpecialMode) spawnRate = SPAWN_RATE_100;
-            else if (score <= 25) spawnRate = SPAWN_RATE_START - (score / 25) * (SPAWN_RATE_START - SPAWN_RATE_25);
-            else if (score <= 50) spawnRate = SPAWN_RATE_25 - ((score - 25) / 25) * (SPAWN_RATE_25 - SPAWN_RATE_50);
-            else if (score <= 75) spawnRate = SPAWN_RATE_50 - ((score - 50) / 25) * (SPAWN_RATE_50 - SPAWN_RATE_75);
-            else if (score <= 100) spawnRate = SPAWN_RATE_75 - ((score - 75) / 25) * (SPAWN_RATE_75 - SPAWN_RATE_100);
-            else if (score <= 200) spawnRate = SPAWN_RATE_100 - ((score - 100) / 100) * (SPAWN_RATE_100 - SPAWN_RATE_200);
-            else spawnRate = SPAWN_RATE_MIN;
-
-            spawnRate = Math.max(spawnRate, SPAWN_RATE_MIN);
-            if (score > SPAWN_CAP_SCORE && !isSpecialMode) spawnRate = SPAWN_RATE_100;
-
-            if (Date.now() - lastTime > spawnRate) {
-                let side = Math.random() < 0.5 ? 'left' : 'right';
-                if (score > 50 && lastSpawnSide === side && Date.now() - lastTime < MIN_SIDE_INTERVAL) {
-                    side = side === 'left' ? 'right' : 'left';
-                }
-                enemies.push(new Enemy(side));
-                lastTime = Date.now();
-                lastSpawnSide = side;
-            }
-        }
-
-        function update() {
-            if (!gameStarted) return;
-
-            time += 1/60;
-            if (isSpecialMode && specialModePrepTime < SPECIAL_MODE_PREP_DURATION) specialModePrepTime += 1/60;
-            if (!gameOver) spawnEnemy();
-
-            animationFrame = Math.floor(time / FRAME_DURATION) % (isSpecialMode ? 2 : 4); // 特殊模式只有 2 幀
-
-            if (playerAttacking) {
-                attackTimers += 1/60;
-                if (attackTimers >= currentAttackDuration) {
-                    playerAttacking = false;
-                    attackDirection = null;
-                    attackTimers = 0;
-                    mouseDownTime = null;
-                }
-            }
-
-            if (gameStarted && titleFadeAlpha > 0) {
-                titleFadeAlpha -= 1/60 / TITLE_FADE_DURATION;
-                if (titleFadeAlpha <= 0) {
-                    titleFadeAlpha = 0;
-                    startScreen.style.display = 'none';
-                }
-            }
-
-            nextBgIndex = Math.min(isSpecialMode ? 0 : backgrounds.length - 1, Math.floor(score / BG_SWITCH_SCORE_INTERVAL));
-            if (nextBgIndex !== currentBgIndex && bgTransition === 0) bgTransition = 0.01;
-            if (bgTransition > 0) {
-                bgTransition += 1/60 / TRANSITION_DURATION;
-                if (bgTransition >= 1) {
-                    bgTransition = 0;
-                    currentBgIndex = nextBgIndex;
-                }
-            }
-
-            if (gameOver) {
-                if (endImageAlpha < 1) endImageAlpha += 1/60 / END_FADE_DURATION;
-                if (endImageAlpha > 1) endImageAlpha = 1;
-                if (endScreenDelay < END_SCREEN_DELAY_DURATION) endScreenDelay += 1/60;
-                return;
-            }
-
-            if (!isSpecialMode) {
-                if (score < 80 && currentBGM !== bgmNormal && musicTransition === 0) {
-                    fadingOut = currentBGM;
-                    fadingIn = bgmNormal;
-                    musicTransition = 0.01;
-                    if (fadingOut) fadingOut.volume = 1;
-                    fadingIn.currentTime = 0;
-                    fadingIn.volume = 0;
-                    if (!bgmMuted) fadingIn.play().catch(e => console.error('BGM正常模式播放失敗:', e));
-                } else if (score >= 80 && currentBGM !== bgmEX && musicTransition === 0) {
-                    fadingOut = currentBGM;
-                    fadingIn = bgmEX;
-                    musicTransition = 0.01;
-                    if (fadingOut) fadingOut.volume = 1;
-                    fadingIn.currentTime = 0;
-                    fadingIn.volume = 0;
-                    if (!bgmMuted) fadingIn.play().catch(e => console.error('BGM EX模式播放失敗:', e));
-                }
-            } else if (currentBGM !== bgmEX) {
-                if (currentBGM) currentBGM.pause();
-                currentBGM = bgmEX;
-                currentBGM.currentTime = 0;
-                currentBGM.volume = 1;
-                if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式BGM播放失敗:', e));
-            }
-
-            if (musicTransition > 0) {
-                musicTransition += 1/60 / MUSIC_FADE_DURATION;
-                if (musicTransition >= 1) {
-                    if (fadingOut) fadingOut.pause();
-                    fadingOut = null;
-                    fadingIn.volume = 1;
-                    currentBGM = fadingIn;
-                    fadingIn = null;
-                    musicTransition = 0;
-                } else {
-                    if (fadingOut) fadingOut.volume = 1 - musicTransition;
-                    if (fadingIn) fadingIn.volume = musicTransition;
-                }
-            }
-
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const enemy = enemies[i];
-                enemy.x += enemy.side === 'left' ? enemy.speed : -enemy.speed;
-
-                if (Math.abs(enemy.x + enemy.width / 2 - player.x) < 50) {
-                    gameOver = true;
-                    endScreen.style.display = 'flex';
-                    finalScore.textContent = isSpecialMode 
-                        ? `Final Score: K${specialScore}` 
-                        : `Final Score: ${score}`;
-                    if (isSpecialMode) {
-                        endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
-                    } else {
-                        endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
-                    }
-                    if (!selectedEndImage) {
-                        if (isSpecialMode) {
-                            selectedEndImage = endEX; // 特殊模式使用 endEX
-                        } else if (score < 80) {
-                            selectedEndImage = endImages[Math.floor(Math.random() * 2)]; // end0 或 end1
-                        } else {
-                            selectedEndImage = endImages[2 + Math.floor(Math.random() * 2)]; // end2 或 end3
-                        }
-                    }
-                    if (currentBGM) currentBGM.pause();
-                    endScreenDelay = 0;
-                    break;
-                }
-
-                if (playerAttacking && attackDirection === 'left' && enemy.side === 'left' && 
-                    enemy.x + enemy.width > player.x - player.attackRange && !enemy.markedForDeletion) {
-                    deadEnemies.push(new DeadEnemy(enemy.x, enemy.y, enemy.side));
-                    enemy.markedForDeletion = true;
-                    enemies.splice(i, 1);
-                    if (isSpecialMode) specialScore += 1;
-                    else score += 1;
-                    if (!sfxMuted) {
-                        if (isSpecialMode) {
-                            hitEXSound.currentTime = 0;
-                            hitEXSound.play();
-                        } else {
-                            hitSound.currentTime = 0;
-                            hitSound.play();
-                        }
-                    }
-                    continue;
-                }
-                if (playerAttacking && attackDirection === 'right' && enemy.side === 'right' && 
-                    enemy.x < player.x + player.attackRange && !enemy.markedForDeletion) {
-                    deadEnemies.push(new DeadEnemy(enemy.x, enemy.y, enemy.side));
-                    enemy.markedForDeletion = true;
-                    enemies.splice(i, 1);
-                    if (isSpecialMode) specialScore += 1;
-                    else score += 1;
-                    if (!sfxMuted) {
-                        if (isSpecialMode) {
-                            hitEXSound.currentTime = 0;
-                            hitEXSound.play();
-                        } else {
-                            hitSound.currentTime = 0;
-                            hitSound.play();
-                        }
-                    }
-                    continue;
-                }
-            }
-
-            deadEnemies = deadEnemies.filter(deadEnemy => !deadEnemy.update());
-            scoreDisplay.textContent = isSpecialMode 
-                ? `Score: K${specialScore}` 
-                : `Score: ${score}`;
-        }
-
-        function draw() {
-            ctx.fillStyle = '#333';
-            ctx.fillRect(0, 0, gameWidth, gameHeight);
-
-            ctx.globalAlpha = 1;
-            const currentBackground = isSpecialMode ? backgroundEX : backgrounds[currentBgIndex];
-            if (currentBackground.complete) ctx.drawImage(currentBackground, 0, 0, gameWidth, gameHeight);
-            if (!isSpecialMode && bgTransition > 0 && backgrounds[nextBgIndex].complete) {
-                ctx.globalAlpha = bgTransition;
-                ctx.drawImage(backgrounds[nextBgIndex], 0, 0, gameWidth, gameHeight);
-            }
-            ctx.globalAlpha = 1;
-
-            if (!gameOver) {
-                const currentPlayerFrames = isSpecialMode ? playerFramesEX2 : (score >= 80 ? playerFramesEX : playerFrames);
-                const currentAttackLeftFrames = isSpecialMode ? attackLeftFramesEX2 : (score >= 80 ? attackLeftFramesEX : attackLeftFrames);
-                const currentAttackRightFrames = isSpecialMode ? attackRightFramesEX2 : (score >= 80 ? attackRightFramesEX : attackRightFrames);
-                const currentKFrames = isSpecialMode ? kFramesSpecial : (score >= 80 ? kFramesEX : kFrames); // 特殊模式使用 kFramesSpecial
-
-                if (currentKFrames[animationFrame].complete) {
-                    const kWidth = player.width * K_WIDTH_SCALE;
-                    const kHeight = player.height * K_HEIGHT_SCALE;
-                    ctx.drawImage(currentKFrames[animationFrame], player.x - kWidth / 2, K_Y_POSITION - kHeight / 2, kWidth, kHeight);
-                }
-
-                if (!playerAttacking) {
-                    if (currentPlayerFrames[animationFrame].complete) {
-                        ctx.drawImage(currentPlayerFrames[animationFrame], player.x - player.width / 2, 
-                                    player.y - player.height / 2, player.width, player.height);
-                    } else {
-                        ctx.fillStyle = 'blue';
-                        ctx.fillRect(player.x - player.width / 2, player.y - player.height / 2, 
-                                    player.width, player.height);
-                    }
-                }
-                if (playerAttacking && attackDirection === 'left') {
-                    if (currentAttackLeftFrames[animationFrame].complete) {
-                        ctx.drawImage(currentAttackLeftFrames[animationFrame], player.x - player.attackRange, 
-                                    player.y - player.height / 2, player.attackRange, player.height);
-                    } else {
-                        ctx.fillStyle = 'red';
-                        ctx.fillRect(player.x - player.attackRange, player.y - player.height / 2, 
-                                    player.attackRange, player.height);
-                    }
-                }
-                if (playerAttacking && attackDirection === 'right') {
-                    if (currentAttackRightFrames[animationFrame].complete) {
-                        ctx.drawImage(currentAttackRightFrames[animationFrame], player.x, 
-                                    player.y - player.height / 2, player.attackRange, player.height);
-                    } else {
-                        ctx.fillStyle = 'red';
-                        ctx.fillRect(player.x, player.y - player.height / 2, 
-                                    player.attackRange, player.height);
-                    }
-                }
-
-                enemies.forEach(enemy => {
-                    if (enemyFrames[enemy.type][animationFrame].complete) {
-                        ctx.save();
-                        if (enemy.side === 'right') {
-                            ctx.scale(-1, 1);
-                            ctx.drawImage(enemyFrames[enemy.type][animationFrame], 
-                                        -(enemy.x + enemy.width), enemy.y, enemy.width, enemy.height);
-                        } else {
-                            ctx.drawImage(enemyFrames[enemy.type][animationFrame], 
-                                        enemy.x, enemy.y, enemy.width, enemy.height);
-                        }
-                        ctx.restore();
-                    } else {
-                        ctx.fillStyle = 'green';
-                        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-                    }
-                });
-
-                deadEnemies.forEach(deadEnemy => {
-                    if (enemyDeadFrame.complete) {
-                        ctx.save();
-                        ctx.globalAlpha = deadEnemy.alpha;
-                        if (deadEnemy.side === 'right') {
-                            ctx.scale(-1, 1);
-                            ctx.drawImage(enemyDeadFrame, -(deadEnemy.x + deadEnemy.width), 
-                                        deadEnemy.y, deadEnemy.width, deadEnemy.height);
-                        } else {
-                            ctx.drawImage(enemyDeadFrame, deadEnemy.x, deadEnemy.y, 
-                                        deadEnemy.width, deadEnemy.height);
-                        }
-                        ctx.restore();
-                    }
-                });
-            } else if (selectedEndImage && selectedEndImage.complete) {
-                ctx.globalAlpha = endImageAlpha;
-                ctx.drawImage(selectedEndImage, END_IMAGE_X, END_IMAGE_Y, END_IMAGE_WIDTH, END_IMAGE_HEIGHT);
-                ctx.globalAlpha = 1;
-            }
-
-            if (titleFadeAlpha > 0 && titleImage.complete) {
-                ctx.globalAlpha = titleFadeAlpha;
-                const titleWidth = gameWidth * 0.5;
-                const titleHeight = titleWidth * (titleImage.height / titleImage.width);
-                ctx.drawImage(titleImage, (gameWidth - titleWidth) / 2, (gameHeight - titleHeight) / 3, titleWidth, titleHeight);
-                ctx.globalAlpha = 1;
-            }
-        }
-
-        function gameLoop() {
-            update();
-            draw();
+    function checkAssetsLoaded() {
+        console.log(`已加載資源: ${assetsLoaded}/${assetsToLoad.length}`);
+        if (assetsLoaded === assetsToLoad.length) {
+            console.log("所有資源加載完成，啟動遊戲");
+            console.log("bgmNormal 加載狀態:", bgmNormal.readyState);
+            console.log("bgmEX 加載狀態:", bgmEX.readyState);
+            loadingScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+            resizeCanvas();
             requestAnimationFrame(gameLoop);
         }
+    }
 
-        function resizeCanvas() {
-            const container = document.getElementById('gameContainer');
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
+    bgmButton.addEventListener('click', () => {
+        bgmMuted = !bgmMuted;
+        bgmButton.textContent = bgmMuted ? 'BGM Off' : 'BGM On';
+        if (bgmMuted && currentBGM) currentBGM.pause();
+        else if (!bgmMuted && gameStarted && currentBGM) currentBGM.play().catch(e => console.error('BGM播放失敗:', e));
+        console.log(`BGM 靜音狀態: ${bgmMuted}`);
+    });
 
-            let width = Math.min(vw, 1920);
-            let height = width * (9 / 16);
-            if (height > vh) {
-                height = vh;
-                width = height * (16 / 9);
-            }
+    sfxButton.addEventListener('click', () => {
+        sfxMuted = !sfxMuted;
+        sfxButton.textContent = sfxMuted ? 'SFX Off' : 'SFX On';
+        console.log(`SFX 靜音狀態: ${sfxMuted}`);
+    });
 
-            container.style.width = `${width}px`;
-            container.style.height = `${height}px`;
-
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${height}px`;
-            canvas.width = GAME_WIDTH;
-            canvas.height = GAME_HEIGHT;
+    fullscreenButton.addEventListener('click', () => {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(e => console.error('全屏請求失敗:', e));
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+            elem.msRequestFullscreen();
         }
+    });
 
-        window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('orientationchange', resizeCanvas);
+    const player = {
+        x: PLAYER_X,
+        y: PLAYER_Y,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT,
+        attackRange: PLAYER_ATTACK_RANGE
+    };
 
-        let inputBuffer = '';
-        document.addEventListener('keydown', (e) => {
-            console.log(`按鍵觸發: ${e.code}`);
-            if (!gameStarted) {
-                if (e.code === 'Space' || e.code === 'Enter') {
-                    startGame();
-                } else {
-                    inputBuffer += e.key.toLowerCase();
-                    if (inputBuffer.endsWith('kaelacute')) {
-                        isSpecialMode = true;
-                        startScreen.innerHTML = '<img src="title.png" alt="Game Title"><br>Special Mode Activated!';
-                        inputBuffer = '';
-                    } else if (inputBuffer.endsWith('gsh')) {
-                        isSpecialMode = false;
-                        startScreen.innerHTML = '<img src="title.png" alt="Game Title">';
-                        inputBuffer = '';
-                    }
-                }
-            } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
-                if (e.code === 'Space' || e.code === 'Enter') {
-                    restartGame();
-                } else {
-                    inputBuffer += e.key.toLowerCase();
-                    if (inputBuffer.endsWith('kaelacute') && !isSpecialMode) {
-                        isSpecialMode = true;
-                        endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Special Mode Activated!<br>Click Screen or Press SPACE/ENTER to Restart</div>`;
-                        finalScore.textContent = `Final Score: K${specialScore}`;
-                        inputBuffer = '';
-                    } else if (inputBuffer.endsWith('gsh') && isSpecialMode) {
-                        isSpecialMode = false;
-                        endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
-                        finalScore.textContent = `Final Score: ${score}`;
-                        inputBuffer = '';
-                    }
-                }
-            } else if (!playerAttacking) {
-                if ((e.code === 'KeyA' || e.code === 'ArrowLeft') && keyReleased.left) {
-                    playerAttacking = true;
-                    attackDirection = 'left';
-                    attackTimers = 0;
-                    keyPressed.left = true;
-                    currentAttackDuration = ATTACK_DURATION_LONG;
-                    keyReleased.left = false;
-                    if (!isSpecialMode && score < 100 && !sfxMuted) {
-                        attackSound.currentTime = 0;
-                        attackSound.play();
-                    }
-                }
-                if ((e.code === 'KeyD' || e.code === 'ArrowRight') && keyReleased.right) {
-                    playerAttacking = true;
-                    attackDirection = 'right';
-                    attackTimers = 0;
-                    keyPressed.right = true;
-                    currentAttackDuration = ATTACK_DURATION_LONG;
-                    keyReleased.right = false;
-                    if (!isSpecialMode && score < 100 && !sfxMuted) {
-                        attackSound.currentTime = 0;
-                        attackSound.play();
-                    }
-                }
+    class Enemy {
+        constructor(side) {
+            this.width = ENEMY_WIDTH;
+            this.height = ENEMY_HEIGHT;
+            this.y = ENEMY_Y;
+            this.type = Math.floor(Math.random() * 3);
+            this.side = side;
+            this.x = side === 'left' ? 0 : gameWidth - this.width;
+            this.speed = calculateEnemySpeed() * (0.8 + Math.random() * ENEMY_SPEED_VARIATION);
+            this.markedForDeletion = false;
+        }
+    }
+
+    function calculateEnemySpeed() {
+        if (isSpecialMode) return SPEED_MAX;
+        if (score <= 50) return SPEED_START + (score / 50) * (SPEED_50 - SPEED_START);
+        else if (score <= SPEED_CAP_SCORE) return SPEED_50 + ((score - 50) / (SPEED_CAP_SCORE - 50)) * (SPEED_MAX - SPEED_50);
+        return SPEED_MAX;
+    }
+
+    class DeadEnemy {
+        constructor(x, y, side) {
+            this.x = x;
+            this.y = DEAD_ENEMY_Y_POSITION;
+            this.side = side;
+            this.width = ENEMY_WIDTH;
+            this.height = ENEMY_HEIGHT;
+            this.time = 0;
+            this.alpha = 1;
+        }
+        update() {
+            this.time += 1/60;
+            this.x += DEAD_SPEED_X * (this.side === 'left' ? -1 : 1) / 60;
+            this.y += DEAD_SPEED_Y / 60;
+            this.alpha = 1 - this.time / DEAD_ANIMATION_DURATION;
+            return this.time >= DEAD_ANIMATION_DURATION;
+        }
+    }
+
+    function spawnEnemy() {
+        if (isSpecialMode && specialModePrepTime < SPECIAL_MODE_PREP_DURATION) return;
+
+        let spawnRate;
+        if (isSpecialMode) spawnRate = SPAWN_RATE_100;
+        else if (score <= 25) spawnRate = SPAWN_RATE_START - (score / 25) * (SPAWN_RATE_START - SPAWN_RATE_25);
+        else if (score <= 50) spawnRate = SPAWN_RATE_25 - ((score - 25) / 25) * (SPAWN_RATE_25 - SPAWN_RATE_50);
+        else if (score <= 75) spawnRate = SPAWN_RATE_50 - ((score - 50) / 25) * (SPAWN_RATE_50 - SPAWN_RATE_75);
+        else if (score <= 100) spawnRate = SPAWN_RATE_75 - ((score - 75) / 25) * (SPAWN_RATE_75 - SPAWN_RATE_100);
+        else if (score <= 200) spawnRate = SPAWN_RATE_100 - ((score - 100) / 100) * (SPAWN_RATE_100 - SPAWN_RATE_200);
+        else spawnRate = SPAWN_RATE_MIN;
+
+        spawnRate = Math.max(spawnRate, SPAWN_RATE_MIN);
+        if (score > SPAWN_CAP_SCORE && !isSpecialMode) spawnRate = SPAWN_RATE_100;
+
+        if (Date.now() - lastTime > spawnRate) {
+            let side = Math.random() < 0.5 ? 'left' : 'right';
+            if (score > 50 && lastSpawnSide === side && Date.now() - lastTime < MIN_SIDE_INTERVAL) {
+                side = side === 'left' ? 'right' : 'left';
             }
-        });
+            enemies.push(new Enemy(side));
+            lastTime = Date.now();
+            lastSpawnSide = side;
+        }
+    }
 
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
-                keyPressed.left = false;
-                keyReleased.left = true;
-                if (playerAttacking && attackDirection === 'left') {
-                    playerAttacking = false;
-                    attackDirection = null;
-                    attackTimers = 0;
-                }
-            }
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') {
-                keyPressed.right = false;
-                keyReleased.right = true;
-                if (playerAttacking && attackDirection === 'right') {
-                    playerAttacking = false;
-                    attackDirection = null;
-                    attackTimers = 0;
-                }
-            }
-        });
+    function update() {
+        if (!gameStarted) return;
 
-        gameContainer.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            console.log(`滑鼠點擊: ${e.button}`);
-            if (!gameStarted) {
-                if (e.button === 0) startGame();
-            } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
-                if (e.button === 0) restartGame();
-            } else if (!playerAttacking) {
-                if (e.button === 0) {
-                    playerAttacking = true;
-                    attackDirection = 'left';
-                    attackTimers = 0;
-                    if (!isSpecialMode && score < 100 && !sfxMuted) {
-                        attackSound.currentTime = 0;
-                        attackSound.play();
-                    }
-                } else if (e.button === 2) {
-                    playerAttacking = true;
-                    attackDirection = 'right';
-                    attackTimers = 0;
-                    if (!isSpecialMode && score < 100 && !sfxMuted) {
-                        attackSound.currentTime = 0;
-                        attackSound.play();
-                    }
-                }
-            }
-        });
+        time += 1/60;
+        if (isSpecialMode && specialModePrepTime < SPECIAL_MODE_PREP_DURATION) specialModePrepTime += 1/60;
+        if (!gameOver) spawnEnemy();
 
-        gameContainer.addEventListener('mouseup', (e) => {
-            e.preventDefault();
-            if (playerAttacking) {
+        animationFrame = Math.floor(time / FRAME_DURATION) % (isSpecialMode ? 2 : 4); // 特殊模式只有 2 幀
+
+        if (playerAttacking) {
+            attackTimers += 1/60;
+            if (attackTimers >= currentAttackDuration) {
                 playerAttacking = false;
                 attackDirection = null;
                 attackTimers = 0;
-                console.log("Mouse released, attack ended");
+                mouseDownTime = null;
             }
-        });
+        }
 
-        gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+        if (gameStarted && titleFadeAlpha > 0) {
+            titleFadeAlpha -= 1/60 / TITLE_FADE_DURATION;
+            if (titleFadeAlpha <= 0) {
+                titleFadeAlpha = 0;
+                startScreen.style.display = 'none';
+            }
+        }
 
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const touchX = (touch.clientX - rect.left) * (gameWidth / rect.width);
-            console.log(`觸控觸發: X=${touchX}`);
+        nextBgIndex = Math.min(isSpecialMode ? 0 : backgrounds.length - 1, Math.floor(score / BG_SWITCH_SCORE_INTERVAL));
+        if (nextBgIndex !== currentBgIndex && bgTransition === 0) bgTransition = 0.01;
+        if (bgTransition > 0) {
+            bgTransition += 1/60 / TRANSITION_DURATION;
+            if (bgTransition >= 1) {
+                bgTransition = 0;
+                currentBgIndex = nextBgIndex;
+            }
+        }
 
-            if (!gameStarted) {
+        if (gameOver) {
+            if (endImageAlpha < 1) endImageAlpha += 1/60 / END_FADE_DURATION;
+            if (endImageAlpha > 1) endImageAlpha = 1;
+            if (endScreenDelay < END_SCREEN_DELAY_DURATION) endScreenDelay += 1/60;
+            return;
+        }
+
+        if (!isSpecialMode) {
+            if (score < 80 && currentBGM !== bgmNormal && musicTransition === 0) {
+                fadingOut = currentBGM;
+                fadingIn = bgmNormal;
+                musicTransition = 0.01;
+                if (fadingOut) fadingOut.volume = 1;
+                fadingIn.currentTime = 0;
+                fadingIn.volume = 0;
+                if (!bgmMuted) fadingIn.play().catch(e => console.error('BGM正常模式播放失敗:', e));
+            } else if (score >= 80 && currentBGM !== bgmEX && musicTransition === 0) {
+                fadingOut = currentBGM;
+                fadingIn = bgmEX;
+                musicTransition = 0.01;
+                if (fadingOut) fadingOut.volume = 1;
+                fadingIn.currentTime = 0;
+                fadingIn.volume = 0;
+                if (!bgmMuted) fadingIn.play().catch(e => console.error('BGM EX模式播放失敗:', e));
+            }
+        } else if (currentBGM !== bgmEX) {
+            if (currentBGM) currentBGM.pause();
+            currentBGM = bgmEX;
+            currentBGM.currentTime = 0;
+            currentBGM.volume = 1;
+            if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式BGM播放失敗:', e));
+        }
+
+        if (musicTransition > 0) {
+            musicTransition += 1/60 / MUSIC_FADE_DURATION;
+            if (musicTransition >= 1) {
+                if (fadingOut) fadingOut.pause();
+                fadingOut = null;
+                fadingIn.volume = 1;
+                currentBGM = fadingIn;
+                fadingIn = null;
+                musicTransition = 0;
+            } else {
+                if (fadingOut) fadingOut.volume = 1 - musicTransition;
+                if (fadingIn) fadingIn.volume = musicTransition;
+            }
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const enemy = enemies[i];
+            enemy.x += enemy.side === 'left' ? enemy.speed : -enemy.speed;
+
+            if (Math.abs(enemy.x + enemy.width / 2 - player.x) < 50) {
+                gameOver = true;
+                endScreen.style.display = 'flex';
+                finalScore.textContent = isSpecialMode 
+                    ? `Final Score: K${specialScore}` 
+                    : `Final Score: ${score}`;
+                if (isSpecialMode) {
+                    endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+                } else {
+                    endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+                }
+                if (!selectedEndImage) {
+                    if (isSpecialMode) {
+                        selectedEndImage = endEX; // 特殊模式使用 endEX
+                    } else if (score < 80) {
+                        selectedEndImage = endImages[Math.floor(Math.random() * 2)]; // end0 或 end1
+                    } else {
+                        selectedEndImage = endImages[2 + Math.floor(Math.random() * 2)]; // end2 或 end3
+                    }
+                }
+                if (currentBGM) currentBGM.pause();
+                endScreenDelay = 0;
+                break;
+            }
+
+            if (playerAttacking && attackDirection === 'left' && enemy.side === 'left' && 
+                enemy.x + enemy.width > player.x - player.attackRange && !enemy.markedForDeletion) {
+                deadEnemies.push(new DeadEnemy(enemy.x, enemy.y, enemy.side));
+                enemy.markedForDeletion = true;
+                enemies.splice(i, 1);
+                if (isSpecialMode) specialScore += 1;
+                else score += 1;
+                if (!sfxMuted) {
+                    if (isSpecialMode) {
+                        hitEXSound.currentTime = 0;
+                        hitEXSound.play();
+                    } else {
+                        hitSound.currentTime = 0;
+                        hitSound.play();
+                    }
+                }
+                continue;
+            }
+            if (playerAttacking && attackDirection === 'right' && enemy.side === 'right' && 
+                enemy.x < player.x + player.attackRange && !enemy.markedForDeletion) {
+                deadEnemies.push(new DeadEnemy(enemy.x, enemy.y, enemy.side));
+                enemy.markedForDeletion = true;
+                enemies.splice(i, 1);
+                if (isSpecialMode) specialScore += 1;
+                else score += 1;
+                if (!sfxMuted) {
+                    if (isSpecialMode) {
+                        hitEXSound.currentTime = 0;
+                        hitEXSound.play();
+                    } else {
+                        hitSound.currentTime = 0;
+                        hitSound.play();
+                    }
+                }
+                continue;
+            }
+        }
+
+        deadEnemies = deadEnemies.filter(deadEnemy => !deadEnemy.update());
+        scoreDisplay.textContent = isSpecialMode 
+            ? `Score: K${specialScore}` 
+            : `Score: ${score}`;
+    }
+
+    function draw() {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, 0, gameWidth, gameHeight);
+
+        ctx.globalAlpha = 1;
+        const currentBackground = isSpecialMode ? backgroundEX : backgrounds[currentBgIndex];
+        if (currentBackground.complete) ctx.drawImage(currentBackground, 0, 0, gameWidth, gameHeight);
+        if (!isSpecialMode && bgTransition > 0 && backgrounds[nextBgIndex].complete) {
+            ctx.globalAlpha = bgTransition;
+            ctx.drawImage(backgrounds[nextBgIndex], 0, 0, gameWidth, gameHeight);
+        }
+        ctx.globalAlpha = 1;
+
+        if (!gameOver) {
+            const currentPlayerFrames = isSpecialMode ? playerFramesEX2 : (score >= 80 ? playerFramesEX : playerFrames);
+            const currentAttackLeftFrames = isSpecialMode ? attackLeftFramesEX2 : (score >= 80 ? attackLeftFramesEX : attackLeftFrames);
+            const currentAttackRightFrames = isSpecialMode ? attackRightFramesEX2 : (score >= 80 ? attackRightFramesEX : attackRightFrames);
+            const currentKFrames = isSpecialMode ? kFramesSpecial : (score >= 80 ? kFramesEX : kFrames); // 特殊模式使用 kFramesSpecial
+
+            if (currentKFrames[animationFrame].complete) {
+                const kWidth = player.width * K_WIDTH_SCALE;
+                const kHeight = player.height * K_HEIGHT_SCALE;
+                ctx.drawImage(currentKFrames[animationFrame], player.x - kWidth / 2, K_Y_POSITION - kHeight / 2, kWidth, kHeight);
+            }
+
+            if (!playerAttacking) {
+                if (currentPlayerFrames[animationFrame].complete) {
+                    ctx.drawImage(currentPlayerFrames[animationFrame], player.x - player.width / 2, 
+                                player.y - player.height / 2, player.width, player.height);
+                } else {
+                    ctx.fillStyle = 'blue';
+                    ctx.fillRect(player.x - player.width / 2, player.y - player.height / 2, 
+                                player.width, player.height);
+                }
+            }
+            if (playerAttacking && attackDirection === 'left') {
+                if (currentAttackLeftFrames[animationFrame].complete) {
+                    ctx.drawImage(currentAttackLeftFrames[animationFrame], player.x - player.attackRange, 
+                                player.y - player.height / 2, player.attackRange, player.height);
+                } else {
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(player.x - player.attackRange, player.y - player.height / 2, 
+                                player.attackRange, player.height);
+                }
+            }
+            if (playerAttacking && attackDirection === 'right') {
+                if (currentAttackRightFrames[animationFrame].complete) {
+                    ctx.drawImage(currentAttackRightFrames[animationFrame], player.x, 
+                                player.y - player.height / 2, player.attackRange, player.height);
+                } else {
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(player.x, player.y - player.height / 2, 
+                                player.attackRange, player.height);
+                }
+            }
+
+            enemies.forEach(enemy => {
+                if (enemyFrames[enemy.type][animationFrame].complete) {
+                    ctx.save();
+                    if (enemy.side === 'right') {
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(enemyFrames[enemy.type][animationFrame], 
+                                    -(enemy.x + enemy.width), enemy.y, enemy.width, enemy.height);
+                    } else {
+                        ctx.drawImage(enemyFrames[enemy.type][animationFrame], 
+                                    enemy.x, enemy.y, enemy.width, enemy.height);
+                    }
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = 'green';
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                }
+            });
+
+            deadEnemies.forEach(deadEnemy => {
+                if (enemyDeadFrame.complete) {
+                    ctx.save();
+                    ctx.globalAlpha = deadEnemy.alpha;
+                    if (deadEnemy.side === 'right') {
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(enemyDeadFrame, -(deadEnemy.x + deadEnemy.width), 
+                                    deadEnemy.y, deadEnemy.width, deadEnemy.height);
+                    } else {
+                        ctx.drawImage(enemyDeadFrame, deadEnemy.x, deadEnemy.y, 
+                                    deadEnemy.width, deadEnemy.height);
+                    }
+                    ctx.restore();
+                }
+            });
+        } else if (selectedEndImage && selectedEndImage.complete) {
+            ctx.globalAlpha = endImageAlpha;
+            ctx.drawImage(selectedEndImage, END_IMAGE_X, END_IMAGE_Y, END_IMAGE_WIDTH, END_IMAGE_HEIGHT);
+            ctx.globalAlpha = 1;
+        }
+
+        if (titleFadeAlpha > 0 && titleImage.complete) {
+            ctx.globalAlpha = titleFadeAlpha;
+            const titleWidth = gameWidth * 0.5;
+            const titleHeight = titleWidth * (titleImage.height / titleImage.width);
+            ctx.drawImage(titleImage, (gameWidth - titleWidth) / 2, (gameHeight - titleHeight) / 3, titleWidth, titleHeight);
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function resizeCanvas() {
+        const container = document.getElementById('gameContainer');
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        let width = Math.min(vw, 1920);
+        let height = width * (9 / 16);
+        if (height > vh) {
+            height = vh;
+            width = height * (16 / 9);
+        }
+
+        container.style.width = `${width}px`;
+        container.style.height = `${height}px`;
+
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+
+    let inputBuffer = '';
+    document.addEventListener('keydown', (e) => {
+        console.log(`按鍵觸發: ${e.code}`);
+        if (!gameStarted) {
+            if (e.code === 'Space' || e.code === 'Enter') {
                 startGame();
-            } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
-                restartGame();
-            } else if (!playerAttacking) {
-                if (touchX < gameWidth / 2) {
-                    playerAttacking = true;
-                    attackDirection = 'left';
-                    attackTimers = 0;
-                    currentAttackDuration = ATTACK_DURATION_SHORT;
-                    if (!isSpecialMode && score < 100 && !sfxMuted) {
-                        attackSound.currentTime = 0;
-                        attackSound.play();
-                    }
-                } else {
-                    playerAttacking = true;
-                    attackDirection = 'right';
-                    attackTimers = 0;
-                    currentAttackDuration = ATTACK_DURATION_SHORT;
-                    if (!isSpecialMode && score < 100 && !sfxMuted) {
-                        attackSound.currentTime = 0;
-                        attackSound.play();
-                    }
+            } else {
+                inputBuffer += e.key.toLowerCase();
+                if (inputBuffer.endsWith('kaelacute')) {
+                    isSpecialMode = true;
+                    startScreen.innerHTML = '<img src="title.png" alt="Game Title"><br>Special Mode Activated!';
+                    inputBuffer = '';
+                } else if (inputBuffer.endsWith('gsh')) {
+                    isSpecialMode = false;
+                    startScreen.innerHTML = '<img src="title.png" alt="Game Title">';
+                    inputBuffer = '';
                 }
             }
-        }, { passive: false });
+        } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                restartGame();
+            } else {
+                inputBuffer += e.key.toLowerCase();
+                if (inputBuffer.endsWith('kaelacute') && !isSpecialMode) {
+                    isSpecialMode = true;
+                    endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+                    finalScore.textContent = `Final Score: K${specialScore}`;
+                    inputBuffer = '';
+                } else if (inputBuffer.endsWith('gsh') && isSpecialMode) {
+                    isSpecialMode = false;
+                    endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+                    finalScore.textContent = `Final Score: ${score}`;
+                    inputBuffer = '';
+                }
+            }
+        } else if (!playerAttacking) {
+            if ((e.code === 'KeyA' || e.code === 'ArrowLeft') && keyReleased.left) {
+                playerAttacking = true;
+                attackDirection = 'left';
+                attackTimers = 0;
+                keyPressed.left = true;
+                currentAttackDuration = ATTACK_DURATION_LONG;
+                keyReleased.left = false;
+                if (!isSpecialMode && score < 100 && !sfxMuted) {
+                    attackSound.currentTime = 0;
+                    attackSound.play();
+                }
+            }
+            if ((e.code === 'KeyD' || e.code === 'ArrowRight') && keyReleased.right) {
+                playerAttacking = true;
+                attackDirection = 'right';
+                attackTimers = 0;
+                keyPressed.right = true;
+                currentAttackDuration = ATTACK_DURATION_LONG;
+                keyReleased.right = false;
+                if (!isSpecialMode && score < 100 && !sfxMuted) {
+                    attackSound.currentTime = 0;
+                    attackSound.play();
+                }
+            }
+        }
+    });
 
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (playerAttacking) {
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
+            keyPressed.left = false;
+            keyReleased.left = true;
+            if (playerAttacking && attackDirection === 'left') {
                 playerAttacking = false;
                 attackDirection = null;
                 attackTimers = 0;
             }
-        }, { passive: false });
-
-        function startGame() {
-            console.log("遊戲開始");
-            gameStarted = true;
-            time = 0;
-            specialModePrepTime = 0;
-            enemies = [];
-            score = 0;
-            specialScore = 0;
-            endImageAlpha = 0;
-            lastTime = 0;
-            lastSpawnSide = null;
-            inputBuffer = '';
-            titleFadeAlpha = 1;
-
-            if (isSpecialMode) {
-                if (currentBGM) currentBGM.pause();
-                currentBGM = bgmEX;
-                currentBGM.currentTime = 0;
-                currentBGM.volume = 1;
-                if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式開始BGM播放失敗:', e));
-                scoreDisplay.textContent = `Score: K${specialScore}`;
-            } else {
-                if (currentBGM) currentBGM.pause();
-                currentBGM = bgmNormal;
-                currentBGM.currentTime = 0;
-                currentBGM.volume = 1;
-                if (!bgmMuted) currentBGM.play().catch(e => console.error('正常模式開始BGM播放失敗:', e));
-                enemies.push(new Enemy('left'), new Enemy('right'));
-                scoreDisplay.textContent = `Score: ${score}`;
+        }
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') {
+            keyPressed.right = false;
+            keyReleased.right = true;
+            if (playerAttacking && attackDirection === 'right') {
+                playerAttacking = false;
+                attackDirection = null;
+                attackTimers = 0;
             }
         }
+    });
 
-        function restartGame() {
-            console.log("遊戲重啟");
-            gameOver = false;
-            gameStarted = true;
-            endScreen.style.display = 'none';
-            time = 0;
-            enemies = [];
-            deadEnemies = [];
-            endImageAlpha = 0;
-            lastTime = 0;
-            specialModePrepTime = 0;
-            selectedEndImage = null;
-            lastSpawnSide = null;
-            score = 0;
-            specialScore = 0;
-            endScreenDelay = 0;
-            inputBuffer = '';
-
-            if (isSpecialMode) {
-                if (currentBGM) currentBGM.pause();
-                currentBGM = bgmEX;
-                currentBGM.currentTime = 0;
-                currentBGM.volume = 1;
-                if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式重啟BGM播放失敗:', e));
-                scoreDisplay.textContent = `Score: K${specialScore}`;
-                endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
-            } else {
-                if (currentBGM) currentBGM.pause();
-                currentBGM = bgmNormal;
-                currentBGM.currentTime = 0;
-                currentBGM.volume = 1;
-                if (!bgmMuted) currentBGM.play().catch(e => console.error('正常模式重啟BGM播放失敗:', e));
-                enemies.push(new Enemy('left'), new Enemy('right'));
-                scoreDisplay.textContent = `Score: ${score}`;
-                endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+    gameContainer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        console.log(`滑鼠點擊: ${e.button}`);
+        if (!gameStarted) {
+            if (e.button === 0) startGame();
+        } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
+            if (e.button === 0) restartGame();
+        } else if (!playerAttacking) {
+            if (e.button === 0) {
+                playerAttacking = true;
+                attackDirection = 'left';
+                attackTimers = 0;
+                if (!isSpecialMode && score < 100 && !sfxMuted) {
+                    attackSound.currentTime = 0;
+                    attackSound.play();
+                }
+            } else if (e.button === 2) {
+                playerAttacking = true;
+                attackDirection = 'right';
+                attackTimers = 0;
+                if (!isSpecialMode && score < 100 && !sfxMuted) {
+                    attackSound.currentTime = 0;
+                    attackSound.play();
+                }
             }
         }
-    </script>
+    });
+
+    gameContainer.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        if (playerAttacking) {
+            playerAttacking = false;
+            attackDirection = null;
+            attackTimers = 0;
+            console.log("Mouse released, attack ended");
+        }
+    });
+
+    gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (touch.clientX - rect.left) * (gameWidth / rect.width);
+        console.log(`觸控觸發: X=${touchX}`);
+
+        if (!gameStarted) {
+            startGame();
+        } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
+            restartGame();
+        } else if (!playerAttacking) {
+            if (touchX < gameWidth / 2) {
+                playerAttacking = true;
+                attackDirection = 'left';
+                attackTimers = 0;
+                currentAttackDuration = ATTACK_DURATION_SHORT;
+                if (!isSpecialMode && score < 100 && !sfxMuted) {
+                    attackSound.currentTime = 0;
+                    attackSound.play();
+                }
+            } else {
+                playerAttacking = true;
+                attackDirection = 'right';
+                attackTimers = 0;
+                currentAttackDuration = ATTACK_DURATION_SHORT;
+                if (!isSpecialMode && score < 100 && !sfxMuted) {
+                    attackSound.currentTime = 0;
+                    attackSound.play();
+                }
+            }
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (playerAttacking) {
+            playerAttacking = false;
+            attackDirection = null;
+            attackTimers = 0;
+        }
+    }, { passive: false });
+
+    function startGame() {
+        console.log("遊戲開始");
+        gameStarted = true;
+        time = 0;
+        specialModePrepTime = 0;
+        enemies = [];
+        score = 0;
+        specialScore = 0;
+        endImageAlpha = 0;
+        lastTime = 0;
+        lastSpawnSide = null;
+        inputBuffer = '';
+        titleFadeAlpha = 1;
+
+        if (isSpecialMode) {
+            if (currentBGM) currentBGM.pause();
+            currentBGM = bgmEX;
+            currentBGM.currentTime = 0;
+            currentBGM.volume = 1;
+            if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式開始BGM播放失敗:', e));
+            scoreDisplay.textContent = `Score: K${specialScore}`;
+        } else {
+            if (currentBGM) currentBGM.pause();
+            currentBGM = bgmNormal;
+            currentBGM.currentTime = 0;
+            currentBGM.volume = 1;
+            if (!bgmMuted) currentBGM.play().catch(e => console.error('正常模式開始BGM播放失敗:', e));
+            enemies.push(new Enemy('left'), new Enemy('right'));
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+    }
+
+    function restartGame() {
+        console.log("遊戲重啟");
+        gameOver = false;
+        gameStarted = true;
+        endScreen.style.display = 'none';
+        time = 0;
+        enemies = [];
+        deadEnemies = [];
+        endImageAlpha = 0;
+        lastTime = 0;
+        specialModePrepTime = 0;
+        selectedEndImage = null;
+        lastSpawnSide = null;
+        score = 0;
+        specialScore = 0;
+        endScreenDelay = 0;
+        inputBuffer = '';
+
+        if (isSpecialMode) {
+            if (currentBGM) currentBGM.pause();
+            currentBGM = bgmEX;
+            currentBGM.currentTime = 0;
+            currentBGM.volume = 1;
+            if (!bgmMuted) currentBGM.play().catch(e => console.error('特殊模式重啟BGM播放失敗:', e));
+            scoreDisplay.textContent = `Score: K${specialScore}`;
+            endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+        } else {
+            if (currentBGM) currentBGM.pause();
+            currentBGM = bgmNormal;
+            currentBGM.currentTime = 0;
+            currentBGM.volume = 1;
+            if (!bgmMuted) currentBGM.play().catch(e => console.error('正常模式重啟BGM播放失敗:', e));
+            enemies.push(new Enemy('left'), new Enemy('right'));
+            scoreDisplay.textContent = `Score: ${score}`;
+            endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+        }
+    }
+</script>
+
 </body>
 </html>
+
