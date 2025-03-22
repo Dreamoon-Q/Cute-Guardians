@@ -79,7 +79,7 @@
             display: flex;
             gap: 10px;
         }
-        #bgmButton, #sfxButton, #fullscreenButton {
+        #bgmButton, #sfxButton, #fullscreenButton, #keyboardButton {
             width: 80px;
             height: 40px;
             font-size: 16px;
@@ -91,8 +91,19 @@
             transition: background 0.3s;
             touch-action: manipulation;
         }
-        #bgmButton:hover, #sfxButton:hover, #fullscreenButton:hover {
+        #bgmButton:hover, #sfxButton:hover, #fullscreenButton:hover, #keyboardButton:hover {
             background: rgba(255, 255, 255, 0.4);
+        }
+        #passwordInput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            border: none;
+            outline: none;
+            background: transparent;
         }
     </style>
 </head>
@@ -111,7 +122,9 @@
             <button id="bgmButton">BGM On</button>
             <button id="sfxButton">SFX On</button>
             <button id="fullscreenButton">Fullscreen</button>
+            <button id="keyboardButton">Keyboard</button>
         </div>
+        <input type="text" id="passwordInput">
     </div>
 <script>
     const canvas = document.getElementById('gameCanvas');
@@ -125,6 +138,8 @@
     const bgmButton = document.getElementById('bgmButton');
     const sfxButton = document.getElementById('sfxButton');
     const fullscreenButton = document.getElementById('fullscreenButton');
+    const keyboardButton = document.getElementById('keyboardButton');
+    const passwordInput = document.getElementById('passwordInput');
 
     const GAME_WIDTH = 1920;
     const GAME_HEIGHT = 1080;
@@ -133,7 +148,6 @@
     const SPECIAL_MODE_PREP_DURATION = 2;
     const END_SCREEN_DELAY_DURATION = 2;
     const TRANSITION_DURATION = 1;
-    const FRAME_DURATION = 0.5;
     const DEAD_ANIMATION_DURATION = 0.5;
     const DEAD_SPEED_X = 100;
     const DEAD_SPEED_Y = -200;
@@ -177,6 +191,24 @@
     const END_IMAGE_X = (GAME_WIDTH - END_IMAGE_WIDTH) / 2;
     const END_IMAGE_Y = GAME_HEIGHT / 2 - END_IMAGE_HEIGHT / 2.2;
 
+    const AnimationConfig = {
+        player: { frames: 4, duration: 0.5 },
+        attackLeft: { frames: 1, duration: 0.5 },
+        attackRight: { frames: 1, duration: 0.5 },
+        playerEX: { frames: 4, duration: 0.5 },
+        attackLeftEX: { frames: 1, duration: 0.5 },
+        attackRightEX: { frames: 1, duration: 0.5 },
+        playerEX2: { frames: 4, duration: 0.5 },
+        attackLeftEX2: { frames: 1, duration: 0.5 },
+        attackRightEX2: { frames: 1, duration: 0.5 },
+        enemy0: { frames: 4, duration: 0.5 },
+        enemy1: { frames: 4, duration: 0.5 },
+        enemy2: { frames: 4, duration: 0.5 },
+        k: { frames: 4, duration: 0.5 },
+        kEX: { frames: 4, duration: 0.5 },
+        kSpecial: { frames: 2, duration: 0.5 }
+    };
+
     let gameWidth = GAME_WIDTH;
     let gameHeight = GAME_HEIGHT;
     canvas.width = gameWidth;
@@ -207,6 +239,7 @@
     let bgTransition = 0;
 
     let animationFrame = 0;
+    let kAnimationFrame = 0;
 
     let deadEnemies = [];
 
@@ -233,63 +266,63 @@
     let bgmMuted = false;
     let sfxMuted = false;
 
-    const playerFrames = Array(4).fill().map((_, i) => {
+    const playerFrames = Array(AnimationConfig.player.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `player_frame${i}.png`;
         return img;
     });
-    const attackLeftFrames = Array(4).fill().map((_, i) => {
+    const attackLeftFrames = Array(AnimationConfig.attackLeft.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `attack_left_frame${i}.png`;
         return img;
     });
-    const attackRightFrames = Array(4).fill().map((_, i) => {
+    const attackRightFrames = Array(AnimationConfig.attackRight.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `attack_right_frame${i}.png`;
         return img;
     });
-    const playerFramesEX = Array(4).fill().map((_, i) => {
+    const playerFramesEX = Array(AnimationConfig.playerEX.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `player_frame${i}_EX.png`;
         return img;
     });
-    const attackLeftFramesEX = Array(4).fill().map((_, i) => {
+    const attackLeftFramesEX = Array(AnimationConfig.attackLeftEX.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `attack_left_frame${i}_EX.png`;
         return img;
     });
-    const attackRightFramesEX = Array(4).fill().map((_, i) => {
+    const attackRightFramesEX = Array(AnimationConfig.attackRightEX.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `attack_right_frame${i}_EX.png`;
         return img;
     });
-    const playerFramesEX2 = Array(4).fill().map((_, i) => {
+    const playerFramesEX2 = Array(AnimationConfig.playerEX2.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `player_frame${i}_EX2.png`;
         return img;
     });
-    const attackLeftFramesEX2 = Array(4).fill().map((_, i) => {
+    const attackLeftFramesEX2 = Array(AnimationConfig.attackLeftEX2.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `attack_left_frame${i}_EX2.png`;
         return img;
     });
-    const attackRightFramesEX2 = Array(4).fill().map((_, i) => {
+    const attackRightFramesEX2 = Array(AnimationConfig.attackRightEX2.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `attack_right_frame${i}_EX2.png`;
         return img;
     });
     const enemyFrames = [
-        Array(4).fill().map((_, i) => {
+        Array(AnimationConfig.enemy0.frames).fill().map((_, i) => {
             const img = new Image();
             img.src = `enemy0_frame${i}.png`;
             return img;
         }),
-        Array(4).fill().map((_, i) => {
+        Array(AnimationConfig.enemy1.frames).fill().map((_, i) => {
             const img = new Image();
             img.src = `enemy1_frame${i}.png`;
             return img;
         }),
-        Array(4).fill().map((_, i) => {
+        Array(AnimationConfig.enemy2.frames).fill().map((_, i) => {
             const img = new Image();
             img.src = `enemy2_frame${i}.png`;
             return img;
@@ -315,17 +348,17 @@
     });
     const endEX = new Image();
     endEX.src = 'endEX.png';
-    const kFrames = Array(4).fill().map((_, i) => {
+    const kFrames = Array(AnimationConfig.k.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `K_frame${i}.png`;
         return img;
     });
-    const kFramesEX = Array(4).fill().map((_, i) => {
+    const kFramesEX = Array(AnimationConfig.kEX.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `K_frame${i}_EX.png`;
         return img;
     });
-    const kFramesSpecial = Array(2).fill().map((_, i) => {
+    const kFramesSpecial = Array(AnimationConfig.kSpecial.frames).fill().map((_, i) => {
         const img = new Image();
         img.src = `K_special_frame${i}.png`;
         return img;
@@ -404,6 +437,37 @@
             elem.webkitRequestFullscreen();
         } else if (elem.msRequestFullscreen) {
             elem.msRequestFullscreen();
+        }
+    });
+
+    keyboardButton.addEventListener('click', () => {
+        passwordInput.focus();
+    });
+
+    passwordInput.addEventListener('input', (e) => {
+        const input = e.target.value.toLowerCase();
+        if (input.endsWith('kaelacute')) {
+            if (!gameStarted) {
+                isSpecialMode = true;
+                startScreen.innerHTML = '<img src="title.png" alt="Game Title"><br>Special Mode Activated!';
+            } else if (gameOver) {
+                isSpecialMode = true;
+                endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: K${specialScore}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+                finalScore.textContent = `Final Score: K${specialScore}`;
+            }
+            passwordInput.value = '';
+            passwordInput.blur();
+        } else if (input.endsWith('gsh')) {
+            if (!gameStarted) {
+                isSpecialMode = false;
+                startScreen.innerHTML = '<img src="title.png" alt="Game Title">';
+            } else if (gameOver) {
+                isSpecialMode = false;
+                endScreen.innerHTML = `<div>Game Over</div><div id="finalScore">Final Score: ${score}</div><div>Click Screen or Press SPACE/ENTER to Restart</div>`;
+                finalScore.textContent = `Final Score: ${score}`;
+            }
+            passwordInput.value = '';
+            passwordInput.blur();
         }
     });
 
@@ -487,7 +551,10 @@
         if (isSpecialMode && specialModePrepTime < SPECIAL_MODE_PREP_DURATION) specialModePrepTime += 1/60;
         if (!gameOver) spawnEnemy();
 
-        animationFrame = Math.floor(time / FRAME_DURATION) % (isSpecialMode ? 2 : 4); // 特殊模式只有 2 幀
+        const currentPlayerConfig = isSpecialMode ? AnimationConfig.playerEX2 : (score >= 80 ? AnimationConfig.playerEX : AnimationConfig.player);
+        const currentKConfig = isSpecialMode ? AnimationConfig.kSpecial : (score >= 80 ? AnimationConfig.kEX : AnimationConfig.k);
+        animationFrame = Math.floor(time / currentPlayerConfig.duration) % currentPlayerConfig.frames;
+        kAnimationFrame = Math.floor(time / currentKConfig.duration) % currentKConfig.frames;
 
         if (playerAttacking) {
             attackTimers += 1/60;
@@ -582,11 +649,11 @@
                 }
                 if (!selectedEndImage) {
                     if (isSpecialMode) {
-                        selectedEndImage = endEX; // 特殊模式使用 endEX
+                        selectedEndImage = endEX;
                     } else if (score < 80) {
-                        selectedEndImage = endImages[Math.floor(Math.random() * 2)]; // end0 或 end1
+                        selectedEndImage = endImages[Math.floor(Math.random() * 2)];
                     } else {
-                        selectedEndImage = endImages[2 + Math.floor(Math.random() * 2)]; // end2 或 end3
+                        selectedEndImage = endImages[2 + Math.floor(Math.random() * 2)];
                     }
                 }
                 if (currentBGM) currentBGM.pause();
@@ -655,12 +722,12 @@
             const currentPlayerFrames = isSpecialMode ? playerFramesEX2 : (score >= 80 ? playerFramesEX : playerFrames);
             const currentAttackLeftFrames = isSpecialMode ? attackLeftFramesEX2 : (score >= 80 ? attackLeftFramesEX : attackLeftFrames);
             const currentAttackRightFrames = isSpecialMode ? attackRightFramesEX2 : (score >= 80 ? attackRightFramesEX : attackRightFrames);
-            const currentKFrames = isSpecialMode ? kFramesSpecial : (score >= 80 ? kFramesEX : kFrames); // 特殊模式使用 kFramesSpecial
+            const currentKFrames = isSpecialMode ? kFramesSpecial : (score >= 80 ? kFramesEX : kFrames);
 
-            if (currentKFrames[animationFrame].complete) {
+            if (currentKFrames[kAnimationFrame].complete) {
                 const kWidth = player.width * K_WIDTH_SCALE;
                 const kHeight = player.height * K_HEIGHT_SCALE;
-                ctx.drawImage(currentKFrames[animationFrame], player.x - kWidth / 2, K_Y_POSITION - kHeight / 2, kWidth, kHeight);
+                ctx.drawImage(currentKFrames[kAnimationFrame], player.x - kWidth / 2, K_Y_POSITION - kHeight / 2, kWidth, kHeight);
             }
 
             if (!playerAttacking) {
@@ -674,8 +741,8 @@
                 }
             }
             if (playerAttacking && attackDirection === 'left') {
-                if (currentAttackLeftFrames[animationFrame].complete) {
-                    ctx.drawImage(currentAttackLeftFrames[animationFrame], player.x - player.attackRange, 
+                if (currentAttackLeftFrames[0].complete) {
+                    ctx.drawImage(currentAttackLeftFrames[0], player.x - player.attackRange, 
                                 player.y - player.height / 2, player.attackRange, player.height);
                 } else {
                     ctx.fillStyle = 'red';
@@ -684,8 +751,8 @@
                 }
             }
             if (playerAttacking && attackDirection === 'right') {
-                if (currentAttackRightFrames[animationFrame].complete) {
-                    ctx.drawImage(currentAttackRightFrames[animationFrame], player.x, 
+                if (currentAttackRightFrames[0].complete) {
+                    ctx.drawImage(currentAttackRightFrames[0], player.x, 
                                 player.y - player.height / 2, player.attackRange, player.height);
                 } else {
                     ctx.fillStyle = 'red';
@@ -1009,7 +1076,5 @@
         }
     }
 </script>
-
 </body>
 </html>
-
