@@ -192,20 +192,20 @@
     const END_IMAGE_Y = GAME_HEIGHT / 2 - END_IMAGE_HEIGHT / 2.2;
 
     const AnimationConfig = {
-        player: { frames: 4, duration: 0.5 },
+        player: { frames: 2, duration: 1 },
         attackLeft: { frames: 1, duration: 0.5 },
         attackRight: { frames: 1, duration: 0.5 },
-        playerEX: { frames: 4, duration: 0.5 },
+        playerEX: { frames: 2, duration: 1 },
         attackLeftEX: { frames: 1, duration: 0.5 },
         attackRightEX: { frames: 1, duration: 0.5 },
-        playerEX2: { frames: 4, duration: 0.5 },
+        playerEX2: { frames: 2, duration: 1 },
         attackLeftEX2: { frames: 1, duration: 0.5 },
         attackRightEX2: { frames: 1, duration: 0.5 },
-        enemy0: { frames: 4, duration: 0.5 },
-        enemy1: { frames: 4, duration: 0.5 },
-        enemy2: { frames: 4, duration: 0.5 },
-        k: { frames: 4, duration: 0.5 },
-        kEX: { frames: 4, duration: 0.5 },
+        enemy0: { frames: 2, duration: 0.5 },
+        enemy1: { frames: 2, duration: 0.5 },
+        enemy2: { frames: 2, duration: 0.5 },
+        k: { frames: 2, duration: 1.5 },
+        kEX: { frames: 2, duration: 1 },
         kSpecial: { frames: 2, duration: 0.5 }
     };
 
@@ -257,11 +257,11 @@
     bgmEX.volume = 1;
     let currentBGM = null;
     const attackSound = new Audio('attack.wav');
-    attackSound.volume = 0.3;
+    attackSound.volume = 0.1;
     const hitSound = new Audio('hit.wav');
-    hitSound.volume = 0.3;
+    hitSound.volume = 0.1;
     const hitEXSound = new Audio('hitEX.wav');
-    hitEXSound.volume = 0.3;
+    hitEXSound.volume = 0.1;
 
     let bgmMuted = false;
     let sfxMuted = false;
