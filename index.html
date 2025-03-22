@@ -4,6 +4,8 @@
     <title>Cute Guardians</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://dreamoon-q.github.io/Cute-Guardians/2025-03-23%20071452.jpg">
     <style>
         body {
             margin: 0;
@@ -257,11 +259,11 @@
     bgmEX.volume = 1;
     let currentBGM = null;
     const attackSound = new Audio('attack.wav');
-    attackSound.volume = 0.1;
+    attackSound.volume = 0.1;  // 已調整音量
     const hitSound = new Audio('hit.wav');
-    hitSound.volume = 0.1;
+    hitSound.volume = 0.3;
     const hitEXSound = new Audio('hitEX.wav');
-    hitEXSound.volume = 0.1;
+    hitEXSound.volume = 0.3;
 
     let bgmMuted = false;
     let sfxMuted = false;
@@ -379,7 +381,6 @@
         if (asset instanceof Image) {
             asset.onload = () => {
                 assetsLoaded++;
-                console.log(`圖片加載成功: ${asset.src}`);
                 checkAssetsLoaded();
             };
             asset.onerror = () => {
@@ -391,7 +392,6 @@
             asset.load();
             asset.oncanplaythrough = () => {
                 assetsLoaded++;
-                console.log(`音效加載成功: ${asset.src}`);
                 checkAssetsLoaded();
             };
             asset.onerror = () => {
@@ -403,11 +403,7 @@
     });
 
     function checkAssetsLoaded() {
-        console.log(`已加載資源: ${assetsLoaded}/${assetsToLoad.length}`);
         if (assetsLoaded === assetsToLoad.length) {
-            console.log("所有資源加載完成，啟動遊戲");
-            console.log("bgmNormal 加載狀態:", bgmNormal.readyState);
-            console.log("bgmEX 加載狀態:", bgmEX.readyState);
             loadingScreen.style.display = 'none';
             startScreen.style.display = 'none';
             resizeCanvas();
@@ -420,13 +416,11 @@
         bgmButton.textContent = bgmMuted ? 'BGM Off' : 'BGM On';
         if (bgmMuted && currentBGM) currentBGM.pause();
         else if (!bgmMuted && gameStarted && currentBGM) currentBGM.play().catch(e => console.error('BGM播放失敗:', e));
-        console.log(`BGM 靜音狀態: ${bgmMuted}`);
     });
 
     sfxButton.addEventListener('click', () => {
         sfxMuted = !sfxMuted;
         sfxButton.textContent = sfxMuted ? 'SFX Off' : 'SFX On';
-        console.log(`SFX 靜音狀態: ${sfxMuted}`);
     });
 
     fullscreenButton.addEventListener('click', () => {
@@ -841,7 +835,6 @@
 
     let inputBuffer = '';
     document.addEventListener('keydown', (e) => {
-        console.log(`按鍵觸發: ${e.code}`);
         if (!gameStarted) {
             if (e.code === 'Space' || e.code === 'Enter') {
                 startGame();
@@ -925,7 +918,6 @@
 
     gameContainer.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        console.log(`滑鼠點擊: ${e.button}`);
         if (!gameStarted) {
             if (e.button === 0) startGame();
         } else if (gameOver && endScreenDelay >= END_SCREEN_DELAY_DURATION) {
@@ -957,7 +949,6 @@
             playerAttacking = false;
             attackDirection = null;
             attackTimers = 0;
-            console.log("Mouse released, attack ended");
         }
     });
 
@@ -968,7 +959,6 @@
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         const touchX = (touch.clientX - rect.left) * (gameWidth / rect.width);
-        console.log(`觸控觸發: X=${touchX}`);
 
         if (!gameStarted) {
             startGame();
@@ -1007,7 +997,6 @@
     }, { passive: false });
 
     function startGame() {
-        console.log("遊戲開始");
         gameStarted = true;
         time = 0;
         specialModePrepTime = 0;
@@ -1039,7 +1028,6 @@
     }
 
     function restartGame() {
-        console.log("遊戲重啟");
         gameOver = false;
         gameStarted = true;
         endScreen.style.display = 'none';
